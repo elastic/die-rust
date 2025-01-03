@@ -1,0 +1,11 @@
+[package]
+name = "die-rust"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+cxx = { version = "1.0.136", features = ["c++20"] }
+
+[build-dependencies]
+cxx = { version = "1.0.136", features = ["c++20"] }
+cmake = "0.1.31"
