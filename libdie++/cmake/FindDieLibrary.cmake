@@ -4,17 +4,21 @@ set(ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
 
 # Only use Qt6
 
-set(QT_BUILD_VERSION "6.6.2")
+set(QT_BUILD_VERSION "6.2.2")
 
-# python -m pip install aqtinstall
+# using apt
+# $ apt install qt6-base-dev qt6-declarative-dev qml-qt6
+# or aqt
+# $ python -m pip install aqtinstall
+# then
+# (win) python -m aqt install-qt -O build windows desktop ${QT_BUILD_VERSION} win64_msvc2019_64
+# (lin) python -m aqt install-qt -O build linux desktop ${QT_BUILD_VERSION} gcc_64
+# (osx) python -m aqt install-qt -O build mac desktop ${QT_BUILD_VERSION} clang_64
 if(WIN32)
-  # python -m aqt install-qt -O build windows desktop ${QT_BUILD_VERSION} win64_msvc2019_64
   set(QT_BUILD_COMPILER "msvc2019_64")
 elseif(LINUX)
-  # python -m aqt install-qt -O build linux desktop ${QT_BUILD_VERSION} gcc_64
   set(QT_BUILD_COMPILER "gcc_64")
 elseif(APPLE)
-  # python -m aqt install-qt -O build mac desktop ${QT_BUILD_VERSION} clang_64
   set(QT_BUILD_COMPILER "macos")
 else()
   message(FATAL "nope")

@@ -1,5 +1,5 @@
+#include <memory>
 #include <stdint.h>
-#include <optional>
 #include <string>
 
 #include "die.h"
@@ -14,33 +14,18 @@
 
 namespace DIE
 {
-    enum class DieFlags : uint32_t
+    std::unique_ptr<std::string>
+    scan(std::string const &filename, uint32_t flags, std::string const &db)
     {
-        Deepscan = DIE_DEEPSCAN,
-        HeuristicScan = DIE_HEURISTICSCAN,
-        AlltypesScan = DIE_ALLTYPESSCAN,
-        RecursiveScan = DIE_RECURSIVESCAN,
-        Verbose = DIE_VERBOSE,
-        ResultAsXml = DIE_RESULTASXML,
-        ResultAsJson = DIE_RESULTASJSON,
-        ResultAsTsv = DIE_RESULTASTSV,
-        ResultAsCsv = DIE_RESULTASCSV,
-    };
+        auto res = ::DIE_ScanFileA(const_cast<char *>(filename.data()), static_cast<int>(flags), const_cast<char *>(db.data()));
+        if (res == nullptr)
+        {
+            return nullptr;
+        }
 
-    std::optional<std::string>
-    ScanFileA(std::string &pszFileName, uint32_t nFlags, std::string &pszDatabase);
-
-    std::optional<std::wstring>
-    ScanFileW(std::wstring &pwszFileName, uint32_t nFlags, std::wstring &pwszDatabase);
-
-#ifdef _WIN32
-    int
-    VB_ScanFile(
-        std::wstring &pwszFileName,
-        uint32_t nFlags,
-        std::wstring &pwszDatabase,
-        std::wstring &pwszBuffer,
-        size_t nBufferSize);
-#endif // _WIN32
+        auto const res_str = std::string(res);
+        ::DIE_FreeMemoryA(const_cast<char *>(res));
+        return std::make_unique<std::string>(res_str);
+    }
 
 } // namespace DIE
