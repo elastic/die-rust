@@ -51,7 +51,8 @@ $ cargo run --quiet --example scan_file -- /bin/ls
 [2025-01-03T22:58:15Z INFO  scan_file] ELF64
         Unknown: Unknown
 
-$ export DIE_DB_PATH=${HOME}.local/lib/python3.10/site-packages/die/db/db
+$ git clone --quiet https://github.com/horsicq/Detect-It-Easy
+$ export DIE_DB_PATH=`pwd`/Detect-It-Easy/db
 $ cargo run --quiet --example scan_file -- /bin/ls --database-path ${DIE_DB_PATH}
 [2025-01-06T18:58:30Z INFO  scan_file] ELF64
         Library: GLIBC(2.4)[DYN AMD64-64]
