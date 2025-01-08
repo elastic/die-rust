@@ -36,6 +36,6 @@ jobs:
         sudo apt update
         sudo apt install qt6-base-dev qt6-declarative-dev qml-qt6 cmake build-essential -y
     - name: Build
-      run: cargo build --verbose
+      run: cargo build -vv --tests --examples
     - name: Run tests
-      run: cargo test --verbose
+      run: cargo test -vv

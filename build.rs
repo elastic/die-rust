@@ -4,14 +4,14 @@
 fn main() {
     let base_dir = "./libdie++";
     let build_dir = "./libdie++/build";
+    let install_dir = "./libdie++/install";
     let lib_die_path = "./libdie++/build/_deps/dielibrary-build/src";
 
     // CMake configure
     {
         std::process::Command::new("cmake")
-            .current_dir(base_dir)
-            .args(["-S", "."])
-            .args(["-B", "build"])
+            .args(["-S", base_dir])
+            .args(["-B", build_dir])
             .spawn()
             .unwrap()
             .wait()
@@ -23,13 +23,24 @@ fn main() {
         let nb_cpu = "4";
 
         std::process::Command::new("cmake")
-            .args(["--build", "build"])
+            .args(["--build", build_dir])
             .args(["-j", nb_cpu])
-            .current_dir(base_dir)
             .spawn()
             .unwrap()
             .wait()
             .expect("failed to build with cmake");
+    }
+
+    // CMake install
+    {
+        std::process::Command::new("cmake")
+            .args(["--install", build_dir])
+            .args(["--prefix", install_dir])
+            .args(["--strip"])
+            .spawn()
+            .unwrap()
+            .wait()
+            .expect("failed to install with cmake");
     }
 
     // die++

@@ -15,7 +15,7 @@ This module provides Rust bindings for the [Detect-It-Easy](https://github.com/h
 The installation can be done using `cargo`.
 
 ```console
-cargo build --git https://github.com/calladoum-elastic/die-rust.git
+cargo build --git https://github.com/elastic/die-rust.git
 ```
 
 The build requires Qt6 libraries. On Linux/macOS they can usually be obtained from the system's package manager.
@@ -23,7 +23,7 @@ To use a specific Qt6 version, it is possible to use `aqtinstall` as follow
 
 ```console
 export QT_BUILD_VERSION=6.2.2
-git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
+git clone https://github.com/elastic/die-rust.git && cd die-rust
 python -m pip install aqtinstall
 python -m aqt install-qt -O build windows desktop ${QT_BUILD_VERSION} win64_msvc2019_64 # (windows)
 python -m aqt install-qt -O build linux desktop ${QT_BUILD_VERSION} gcc_64 # (linux)
@@ -51,7 +51,8 @@ $ cargo run --quiet --example scan_file -- /bin/ls
 [2025-01-03T22:58:15Z INFO  scan_file] ELF64
         Unknown: Unknown
 
-$ export DIE_DB_PATH=${HOME}.local/lib/python3.10/site-packages/die/db/db
+$ git clone --quiet https://github.com/horsicq/Detect-It-Easy
+$ export DIE_DB_PATH=`pwd`/Detect-It-Easy/db
 $ cargo run --quiet --example scan_file -- /bin/ls --database-path ${DIE_DB_PATH}
 [2025-01-06T18:58:30Z INFO  scan_file] ELF64
         Library: GLIBC(2.4)[DYN AMD64-64]
