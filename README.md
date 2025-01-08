@@ -21,20 +21,41 @@ cargo build --git https://github.com/calladoum-elastic/die-rust.git
 The build requires Qt6 libraries. On Linux/macOS they can usually be obtained from the system's package manager.
 To use a specific Qt6 version, it is possible to use `aqtinstall` as follow
 
-```console
+### Linux
+
+```bash
 export QT_BUILD_VERSION=6.2.2
 git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
 python -m pip install aqtinstall
-python -m aqt install-qt -O build windows desktop ${QT_BUILD_VERSION} win64_msvc2019_64 # (windows)
-python -m aqt install-qt -O build linux desktop ${QT_BUILD_VERSION} gcc_64 # (linux)
-python -m aqt install-qt -O build mac desktop ${QT_BUILD_VERSION} clang_64 # (macos)
+python -m aqt install-qt -O ./libdie++/build/ linux desktop ${QT_BUILD_VERSION} gcc_64
+export QT6_LIB_PATH=./libdie++/build/6.2.2/gcc_64/lib
 ```
 
-Then build `die-rust` by passing the paths to the Qt6 libraries with the `QT6_LIB_PATH` environment.
-```console
-export QT6_LIB_PATH=./libdie++/build/6.2.2/gcc_64/lib # linux
+### macOS
+
+```bash
+export QT_BUILD_VERSION=6.2.2
+git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
+python -m pip install aqtinstall
+python -m aqt install-qt -O ./libdie++/build/ mac desktop ${QT_BUILD_VERSION} clang_64
 export QT6_LIB_PATH=./libdie++/build/6.2.2/clang_64/lib # macos
-export QT6_LIB_PATH=./libdie++/build/6.2.2/win64_msvc2019_64/lib # windows
+```
+
+### Windows
+
+```pwsh
+$env:QT_BUILD_VERSION="6.2.2"
+git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
+python -m pip install aqtinstall
+python -m aqt install-qt -O ./libdie++/build/ windows desktop $env:QT_BUILD_VERSION win64_msvc2019_64
+$env:QT6_LIB_PATH="./libdie++/build/6.2.2/msvc2019_64/lib"
+```
+
+### Build
+
+Then build `die-rust` by passing the paths to the Qt6 libraries with the `QT6_LIB_PATH` environment.
+
+```console
 cargo build
 ```
 

@@ -16,6 +16,7 @@ jobs:
       matrix:
         variants:
           -  {os: ubuntu-24.04, config: release}
+          -  {os: windows-2019, config: release}
           # -  {os: ubuntu-22.04, config: release}
     runs-on: ${{ matrix.variants.os }}
     steps:

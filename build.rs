@@ -6,30 +6,38 @@ fn main() {
     let build_dir = "./libdie++/build";
     let lib_die_path = "./libdie++/build/_deps/dielibrary-build/src";
 
+    #[cfg(debug_assertions)]
+    let build_type = "Debug";
+    #[cfg(not(debug_assertions))]
+    let build_type = "Release";
+
     // CMake configure
     {
-        std::process::Command::new("cmake")
+        assert!(std::process::Command::new("cmake")
             .current_dir(base_dir)
             .args(["-S", "."])
             .args(["-B", "build"])
             .spawn()
             .unwrap()
             .wait()
-            .expect("failed to configure cmake");
+            .expect("failed to configure cmake")
+            .success());
     }
 
     // CMake build
     {
         let nb_cpu = "4";
 
-        std::process::Command::new("cmake")
+        assert!(std::process::Command::new("cmake")
             .args(["--build", "build"])
             .args(["-j", nb_cpu])
+            .args(["--config", build_type])
             .current_dir(base_dir)
             .spawn()
             .unwrap()
             .wait()
-            .expect("failed to build with cmake");
+            .expect("failed to build with cmake")
+            .success());
     }
 
     // die++
@@ -78,8 +86,31 @@ fn main() {
         println!("cargo:rustc-link-lib=dylib=c++");
         println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
     } else {
-        // TODO (calladoum) other OSes
-        unimplemented!();
+        let lib_qt_path = "./libdie++/build/6.2.2/msvc2019_64/lib";
+        println!("cargo:rustc-link-search=native={}", lib_qt_path);
+
+        println!(
+            "cargo:rustc-link-search=native={}/{}",
+            build_dir, build_type
+        );
+        println!(
+            "cargo:rustc-link-search=native={}/_deps/dielibrary-build/src/dielib/{}",
+            build_dir, build_type
+        );
+        for _mod in ["bzip2", "lzma", "zlib"].iter() {
+            println!(
+                "cargo:rustc-link-search=native={}/XArchive/3rdparty/{}/{}",
+                lib_die_path, _mod, build_type
+            );
+        }
+
+        println!(
+            "cargo:rustc-link-search=native={}/XCapstone/{}",
+            lib_die_path, build_type
+        );
+
+        println!("cargo:rustc-link-lib=dylib=Crypt32");
+        println!("cargo:rustc-link-lib=dylib=Wintrust");
     }
 
     println!("cargo:rerun-if-changed=src/lib.rs");

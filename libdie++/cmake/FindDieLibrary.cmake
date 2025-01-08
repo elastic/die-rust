@@ -1,19 +1,8 @@
 include(FetchContent)
 
 set(ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
-
-# Only use Qt6
-
 set(QT_BUILD_VERSION "6.2.2")
 
-# using apt
-# $ apt install qt6-base-dev qt6-declarative-dev qml-qt6
-# or aqt
-# $ python -m pip install aqtinstall
-# then
-# (win) python -m aqt install-qt -O build windows desktop ${QT_BUILD_VERSION} win64_msvc2019_64
-# (lin) python -m aqt install-qt -O build linux desktop ${QT_BUILD_VERSION} gcc_64
-# (osx) python -m aqt install-qt -O build mac desktop ${QT_BUILD_VERSION} clang_64
 if(WIN32)
   set(QT_BUILD_COMPILER "msvc2019_64")
 elseif(LINUX)
@@ -24,14 +13,15 @@ else()
   message(FATAL "nope")
 endif()
 
-set(Qt6_CMAKE_DIR "${ROOT_DIR}/build/${QT_BUILD_VERSION}/${QT_BUILD_COMPILER}/lib/cmake")
-set(Qt6_DIR "${Qt6_CMAKE_DIR}/Qt6")
+set(Qt6_PREFIX_PATH "${ROOT_DIR}/build/${QT_BUILD_VERSION}/${QT_BUILD_COMPILER}")
+set(CMAKE_PREFIX_PATH  "${Qt6_PREFIX_PATH}")
+set(Qt6_CMAKE_PREFIX_PATH "${Qt6_PREFIX_PATH}/lib/cmake")
+set(Qt6_DIR ${Qt6_CMAKE_PREFIX_PATH}/Qt6)
 set(QT_DIR ${Qt6_DIR})
 
 list(APPEND CMAKE_MODULE_PATH
+  ${Qt6_CMAKE_PREFIX_PATH}
   ${Qt6_DIR}
-  ${Qt6_CMAKE_DIR}
-  ${Qt6_CMAKE_DIR}/Qt6Core
 )
 
 find_package(Qt6 REQUIRED COMPONENTS Core Concurrent Qml)
