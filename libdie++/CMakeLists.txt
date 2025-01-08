@@ -98,5 +98,9 @@ else()
             PATTERN "Qt6Qml.*"
             PATTERN "Qt6Concurrent.*"
             PATTERN "Qt6Network.*"
+            PATTERN "Qt6Cored.*"
+            PATTERN "Qt6Qmld.*"
+            PATTERN "Qt6Concurrentd.*"
+            PATTERN "Qt6Networkd.*"
     )
 endif()
