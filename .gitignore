@@ -1,5 +1,11 @@
 /target
 /build
+/Qt6Cored.dll
+/Qt6Core.dll
+/Qt6Qmld.dll
+/Qt6Qml.dll
+/Qt6Networkd.dll
+/Qt6Network.dll
 libdie++/build
 libdie++/install
 .vscode
