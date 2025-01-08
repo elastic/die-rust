@@ -6,6 +6,9 @@ const BUILD_DIR: &'static str = "./libdie++/build";
 const INSTALL_DIR: &'static str = "./libdie++/install/die";
 const LIB_DIE_PATH: &'static str = "./libdie++/build/_deps/dielibrary-build/src";
 
+#[cfg(target_os = "windows")]
+const MSVC_PATH: &'static str = r"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0";
+
 #[cfg(debug_assertions)]
 const BUILD_TYPE: &'static str = "Debug";
 #[cfg(not(debug_assertions))]
@@ -43,7 +46,7 @@ fn cmake_build_die() {
 
     // CMake install
     {
-        std::process::Command::new("cmake")
+        assert!(std::process::Command::new("cmake")
             .args(["--install", "build"])
             .args(["--config", BUILD_TYPE])
             .args(["--prefix", "install"])
@@ -51,7 +54,8 @@ fn cmake_build_die() {
             .spawn()
             .unwrap()
             .wait()
-            .expect("failed to install with cmake");
+            .expect("failed to install with cmake")
+            .success());
     }
 }
 
@@ -75,25 +79,6 @@ fn install_common() {
         "cargo:rustc-link-search=native={}",
         std::env::var("QT6_LIB_PATH").unwrap()
     );
-
-    if BUILD_TYPE == "Debug" {
-        println!("cargo:rustc-link-lib=static=Qt6Cored");
-        println!("cargo:rustc-link-lib=static=Qt6Qmld");
-        println!("cargo:rustc-link-lib=static=Qt6Networkd");
-        println!("cargo:rustc-link-lib=dylib=Qt6Cored");
-        println!("cargo:rustc-link-lib=dylib=Qt6Qmld");
-        println!("cargo:rustc-link-lib=dylib=Qt6Networkd");
-
-        // // FIXME (calladoum) ugly
-        let path = r"C:\Program Files\Microsoft Visual Studio\2022\Professional\VC\Tools\MSVC\14.42.34433\lib\x64";
-        println!("cargo:rustc-link-search=native={}", path);
-        let path = r"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0\ucrt\x64\";
-        println!("cargo:rustc-link-search=native={}", path);
-
-        println!("cargo:rustc-link-lib=static=msvcrtd");
-        println!("cargo:rustc-link-lib=static=vcruntimed");
-        println!("cargo:rustc-link-lib=static=ucrtd");
-    }
 
     if BUILD_TYPE == "Release" {
         println!("cargo:rustc-link-lib=static=Qt6Core");
@@ -124,6 +109,7 @@ fn install_macos() {
     println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
 }
 
+#[cfg(target_os = "windows")]
 fn install_windows() {
     println!(
         "cargo:rustc-link-search=native={}/{}",
@@ -139,14 +125,24 @@ fn install_windows() {
             LIB_DIE_PATH, _mod, BUILD_TYPE
         );
     }
-
     println!(
         "cargo:rustc-link-search=native={}/XCapstone/{}",
         LIB_DIE_PATH, BUILD_TYPE
     );
-
     println!("cargo:rustc-link-lib=dylib=Crypt32");
     println!("cargo:rustc-link-lib=dylib=Wintrust");
+
+    if BUILD_TYPE == "Debug" {
+        println!("cargo:rustc-link-lib=static=Qt6Cored");
+        println!("cargo:rustc-link-lib=static=Qt6Qmld");
+        println!("cargo:rustc-link-lib=static=Qt6Networkd");
+        println!("cargo:rustc-link-lib=dylib=Qt6Cored");
+        println!("cargo:rustc-link-lib=dylib=Qt6Qmld");
+        println!("cargo:rustc-link-lib=dylib=Qt6Networkd");
+
+        println!("cargo:rustc-link-search=native={}/ucrt/x64", MSVC_PATH);
+        println!("cargo:rustc-link-lib=static=ucrtd");
+    }
 }
 
 fn main() {
@@ -161,6 +157,7 @@ fn main() {
     } else if target.contains("apple") {
         install_macos();
     } else {
+        #[cfg(target_os = "windows")]
         install_windows();
     }
 
