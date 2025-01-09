@@ -157,6 +157,7 @@ fn main() {
     install_common();
 
     if cfg!(target_os = "linux") {
+        #[cfg(target_os = "linux")]
         install_linux();
     } else if cfg!(target_os = "macos") {
         #[cfg(target_os = "macos")]
