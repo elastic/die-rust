@@ -33,32 +33,31 @@ jobs:
           target/
         key: ${{ matrix.variants.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Prepare build (Linux)
+    - name: Build (Linux)
       if: startsWith(matrix.variant.runner, 'ubuntu-')
       run: |
         python -m pip install aqtinstall --user --upgrade
         python -m aqt install-qt -O libdie++/build linux desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.compiler }}
-        echo QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib" >> $GITHUB_ENV
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        cargo build -vv --tests --examples
+        echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
 
-    - name: Prepare build (Windows)
+    - name: Build (Windows)
       if: startsWith(matrix.variant.runner, 'windows-')
       run: |
         python -m pip install aqtinstall --user --upgrade
         python -m aqt install-qt -O libdie++/build windows desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.compiler }}
-        echo QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+        $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        cargo build -vv --tests --examples
 
-    - name: Build
-      run: cargo build -vv --tests --examples
-
-    - name: Prepare tests (Linux)
+    - name: Tests (Linux)
       if: startsWith(matrix.variant.runner, 'ubuntu-')
       run: |
-        echo LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}/lib >> $GITHUB_ENV
+        echo LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH} >> $GITHUB_ENV
+        cargo test -vv
 
-    - name: Prepare tests (Windows)
+    - name: Tests (Windows)
       if: startsWith(matrix.variant.runner, 'windows-')
       run: |
         cp -v ./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/*.dll .
-
-    - name: Run tests
-      run: cargo test -vv
+        cargo test -vv
