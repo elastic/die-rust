@@ -2,8 +2,9 @@
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
 
 const BASE_DIR: &'static str = "./libdie++";
+#[allow(dead_code)]
 const BUILD_DIR: &'static str = "./libdie++/build";
-const INSTALL_DIR: &'static str = "./libdie++/install/die";
+const INSTALL_DIR: &'static str = "./libdie++/install";
 const LIB_DIE_PATH: &'static str = "./libdie++/build/_deps/dielibrary-build/src";
 
 #[cfg(target_os = "windows")]
@@ -61,7 +62,6 @@ fn cmake_build_die() {
 
 fn install_common() {
     // die & die++
-    println!("cargo:rustc-link-search=native={}/dielib", INSTALL_DIR);
     println!("cargo:rustc-link-lib=static=die++");
     println!("cargo:rustc-link-lib=static=die");
 
@@ -88,8 +88,14 @@ fn install_common() {
     }
 }
 
+#[cfg(target_os = "linux")]
 fn install_linux() {
+    println!("cargo:rustc-link-search=native={}/die", INSTALL_DIR);
+    println!("cargo:rustc-link-search=native={}/die/lib", INSTALL_DIR);
     println!("cargo:rustc-link-lib=dylib=stdc++");
+    println!("cargo:rustc-link-lib=dylib=Qt6Core");
+    println!("cargo:rustc-link-lib=dylib=Qt6Qml");
+    println!("cargo:rustc-link-lib=dylib=Qt6Network");
     println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
 
     println!("cargo:rustc-link-search=native={}/XCapstone", LIB_DIE_PATH);
@@ -101,13 +107,16 @@ fn install_linux() {
     }
 }
 
+#[cfg(target_os = "macos")]
 fn install_macos() {
+    todo!();
     println!("cargo:rustc-link-lib=dylib=c++");
     println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
 }
 
 #[cfg(target_os = "windows")]
 fn install_windows() {
+    println!("cargo:rustc-link-search=native={}/die/dielib", INSTALL_DIR);
     println!(
         "cargo:rustc-link-search=native={}/{}",
         BUILD_DIR, BUILD_TYPE
@@ -147,15 +156,16 @@ fn main() {
 
     install_common();
 
-    let target = std::env::var("TARGET").unwrap();
-
-    if target.contains("linux") {
+    if cfg!(target_os = "linux") {
         install_linux();
-    } else if target.contains("apple") {
+    } else if cfg!(target_os = "macos") {
+        #[cfg(target_os = "macos")]
         install_macos();
-    } else {
+    } else if cfg!(target_os = "windows") {
         #[cfg(target_os = "windows")]
         install_windows();
+    } else {
+        unimplemented!();
     }
 
     println!("cargo:rerun-if-changed=src/lib.rs");
