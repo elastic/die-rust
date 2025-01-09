@@ -15,7 +15,7 @@
 namespace DIE
 {
     std::unique_ptr<std::string>
-    scan(std::string const &filename, uint32_t flags, std::string const &db)
+    scan_file(std::string const &filename, uint32_t flags, std::string const &db)
     {
         auto res = ::DIE_ScanFileA(const_cast<char *>(filename.data()), static_cast<int>(flags), const_cast<char *>(db.data()));
         if (res == nullptr)

@@ -50,8 +50,7 @@ unsafe extern "C" {
     fn DIE_ScanFileExA(fname: *const i8, flags: u32) -> *mut i8;
     fn DIE_ScanMemoryA(mem: *const u8, len: u32, flags: u32, db: *const i8) -> *mut i8;
     fn DIE_ScanMemoryExA(mem: *const u8, len: u32, flags: u32) -> *mut i8;
-    #[allow(dead_code)]
-    fn DIE_LoadDatabaseA(fname: *const u8) -> i32;
+    fn DIE_LoadDatabaseA(fname: *const i8) -> i32;
 }
 
 /// Scans a file at the specified path using the provided scan flags.
@@ -228,6 +227,45 @@ pub fn scan_memory_with_db(mem: &[u8], flags: ScanFlags, db_path: &Path) -> Resu
         let str = CStr::from_ptr(res).to_str()?.to_string();
         DIE_FreeMemoryA(res);
         Ok(str)
+    }
+}
+
+/// Loads the database from the specified file path.
+///
+/// # Description
+///
+/// This function attempts to load a database from the given file path and returns
+/// a result indicating the success or failure of the operation. On success, it returns
+/// an integer representing the database identifier.
+///
+/// # Arguments
+///
+/// * `fpath` - A reference to a `Path` that specifies the location of the database file.
+///
+/// # Returns
+///
+/// * `Result<()>` - On success, returns `Ok()`.
+///                  On failure, returns an `Err` with the error details.
+///
+/// # Examples
+///
+/// ```
+/// # use std::path::Path;
+/// use die::load_database;
+///
+/// let path = Path::new("/path/to/die/database.db");
+/// match load_database(&path) {
+///     Ok(_) => println!("Database path successfully loaded"),
+///     Err(e) => println!("Failed to load database: {:?}", e),
+/// }
+/// ```
+pub fn load_database(fpath: &Path) -> Result<()> {
+    let fpath = CString::new(fpath.to_str().ok_or(Error::ConversionFailure)?)?;
+
+    let res = unsafe { DIE_LoadDatabaseA(fpath.as_ptr()) };
+    match res {
+        0 => Ok(()),
+        err => Err(Error::Ffi { error_code: err }),
     }
 }
 
