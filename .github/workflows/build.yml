@@ -53,7 +53,7 @@ jobs:
         echo QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib" >> $GITHUB_ENV
 
     - name: Build
-      run: cargo build -vv
+      run: cargo build -vv --tests --examples
 
     - name: Prepare tests (Windows)
       if: startsWith(matrix.variant.runner, 'windows-')
