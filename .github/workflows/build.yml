@@ -24,9 +24,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - run: |
-        mkdir -p ~/.cargo/{bin,registry/index,registry/cache,git/db}
-        mkdir -p target
-        mkdir -p libdie++/install
+        bash -c "mkdir -p ~/.cargo/{bin,registry/index,registry/cache,git/db} target libdie++/install"
     - uses: actions/cache@v4
       with:
         path: |
