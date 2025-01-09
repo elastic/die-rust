@@ -30,6 +30,8 @@ jobs:
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
+          libdie++/build/
+          target/
         key: ${{ matrix.variants.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     - name: Build (Linux)
@@ -52,7 +54,8 @@ jobs:
     - name: Tests (Linux)
       if: startsWith(matrix.variants.os, 'ubuntu-')
       run: |
-        echo LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH} >> $GITHUB_ENV
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
         cargo test -vv
 
     - name: Tests (Windows)
