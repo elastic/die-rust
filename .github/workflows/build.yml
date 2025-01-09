@@ -33,35 +33,32 @@ jobs:
           target/
         key: ${{ matrix.variants.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Setup (Linux)
+    - name: Prepare build (Linux)
       if: startsWith(matrix.variant.runner, 'ubuntu-')
       run: |
         python -m pip install aqtinstall --user --upgrade
         python -m aqt install-qt -O libdie++/build linux desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.compiler }}
         echo QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib" >> $GITHUB_ENV
 
-    - name: Setup (Windows)
+    - name: Prepare build (Windows)
       if: startsWith(matrix.variant.runner, 'windows-')
       run: |
         python -m pip install aqtinstall --user --upgrade
         python -m aqt install-qt -O libdie++/build windows desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.compiler }}
-        echo QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib" >> $GITHUB_ENV
+        echo QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Build
       run: cargo build -vv --tests --examples
-
-    - name: Prepare tests (Windows)
-      if: startsWith(matrix.variant.runner, 'windows-')
-      run: |
-        cp -v ./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/*.dll .
 
     - name: Prepare tests (Linux)
       if: startsWith(matrix.variant.runner, 'ubuntu-')
       run: |
         echo LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}/lib >> $GITHUB_ENV
 
+    - name: Prepare tests (Windows)
+      if: startsWith(matrix.variant.runner, 'windows-')
+      run: |
+        cp -v ./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/*.dll .
+
     - name: Run tests
       run: cargo test -vv
-
-    - if: failure()
-      run: curl -sSf https://sshx.io/get | sh -s run
