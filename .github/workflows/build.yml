@@ -17,8 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         variants:
-          -  {os: ubuntu-24.04, config: release, compiler: gcc_64}
-          -  {os: windows-2019, config: release, compiler: win64_msvc2019_64}
+          -  {os: ubuntu-24.04, }
+          -  {os: windows-2019, }
           # -  {os: macos-13, config: release}
     runs-on: ${{ matrix.variants.os }}
     steps:
@@ -38,8 +38,8 @@ jobs:
       if: startsWith(matrix.variants.os, 'ubuntu-')
       run: |
         python -m pip install aqtinstall --user --upgrade
-        python -m aqt install-qt -O libdie++/build linux desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.compiler }}
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        python -m aqt install-qt -O libdie++/build linux desktop ${{ env.QT_BUILD_VERSION }} gcc_64
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/gcc_64/lib"
         cargo build -vv --tests --examples
         echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
 
@@ -47,19 +47,19 @@ jobs:
       if: startsWith(matrix.variants.os, 'windows-')
       run: |
         python -m pip install aqtinstall --user --upgrade
-        python -m aqt install-qt -O libdie++/build windows desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.compiler }}
-        $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        python -m aqt install-qt -O libdie++/build windows desktop ${{ env.QT_BUILD_VERSION }} win64_msvc2019_64
+        $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/msvc2019_64/lib"
         cargo build -vv --tests --examples
 
     - name: Tests (Linux)
       if: startsWith(matrix.variants.os, 'ubuntu-')
       run: |
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/gcc_64/lib"
         export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
         cargo test -vv
 
     - name: Tests (Windows)
       if: startsWith(matrix.variants.os, 'windows-')
       run: |
-        cp -v ./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/*.dll .
+        cp -v ./libdie++/install/die/*.dll .
         cargo test -vv
