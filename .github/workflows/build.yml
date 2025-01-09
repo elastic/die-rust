@@ -61,5 +61,6 @@ jobs:
     - name: Tests (Windows)
       if: startsWith(matrix.variants.os, 'windows-')
       run: |
+        $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/msvc2019_64/lib"
         cp -v ./libdie++/install/die/*.dll .
         cargo test -vv
