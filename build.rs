@@ -14,7 +14,6 @@ const BUILD_TYPE: &'static str = "Debug";
 #[cfg(not(debug_assertions))]
 const BUILD_TYPE: &'static str = "Release";
 
-
 fn cmake_build_die() {
     // CMake configure
     {
@@ -73,13 +72,10 @@ fn install_common() {
     println!("cargo:rustc-link-lib=static=capstone_x86");
 
     // qt
-    if let Ok(qt_lib_path) = std::env::var("QT6_LIB_PATH") {
+    println!("cargo:rerun-if-env-changed=QT6_LIB_PATH");
+    if let Some(qt_lib_path) = option_env!("QT6_LIB_PATH") {
         println!("cargo:rustc-link-search=native={}", qt_lib_path);
     }
-    // println!(
-    //     "cargo:rustc-link-search=native={}",
-    //     std::env::var("QT6_LIB_PATH").unwrap()
-    // );
 
     if BUILD_TYPE == "Release" {
         println!("cargo:rustc-link-lib=static=Qt6Core");
