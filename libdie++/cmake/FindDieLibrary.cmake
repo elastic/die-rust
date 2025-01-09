@@ -31,7 +31,7 @@ FetchContent_Declare(
   # GIT_REPOSITORY "https://github.com/horsicq/die_library"
   # GIT_TAG ebe34ba3b3a38d5f40c02064a116faec7376bad3
   GIT_REPOSITORY "https://github.com/calladoum-elastic/die_library"
-  GIT_TAG 51ce6511a7c8532ef0dbac2b007d74405659d9f6
+  GIT_TAG e6f91085fed31b69907ab03f95d6bf8dce7752ac
 )
 
 set(DIE_BUILD_AS_STATIC ON CACHE INTERNAL "")
