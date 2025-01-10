@@ -63,7 +63,6 @@ target_link_libraries(die++ PRIVATE Qt6::Qml)
 target_link_libraries(die++ PRIVATE Qt6::Concurrent)
 target_link_libraries(die++ PRIVATE Qt6::Network)
 
-install(DIRECTORY die DESTINATION .)
 install(TARGETS die++ DESTINATION die/)
 install(TARGETS die DESTINATION die/)
 install(DIRECTORY ${DIELIB_BASE_ROOT}/dep/Detect-It-Easy/db DESTINATION die/db)
@@ -98,5 +97,9 @@ else()
             PATTERN "Qt6Qml.*"
             PATTERN "Qt6Concurrent.*"
             PATTERN "Qt6Network.*"
+            PATTERN "Qt6Cored.*"
+            PATTERN "Qt6Qmld.*"
+            PATTERN "Qt6Concurrentd.*"
+            PATTERN "Qt6Networkd.*"
     )
 endif()
