@@ -28,10 +28,10 @@ find_package(Qt6 REQUIRED COMPONENTS Core Concurrent Qml)
 
 FetchContent_Declare(
   DieLibrary
-  # GIT_REPOSITORY "https://github.com/horsicq/die_library"
-  # GIT_TAG ebe34ba3b3a38d5f40c02064a116faec7376bad3
-  GIT_REPOSITORY "https://github.com/calladoum-elastic/die_library"
-  GIT_TAG e6f91085fed31b69907ab03f95d6bf8dce7752ac
+  GIT_REPOSITORY "https://github.com/horsicq/die_library"
+  GIT_TAG 6a0c6aa55af518d6e841436130beb05eb5fc769b
+  # GIT_REPOSITORY "https://github.com/calladoum-elastic/die_library"
+  # GIT_TAG e6f91085fed31b69907ab03f95d6bf8dce7752ac
 )
 
 set(DIE_BUILD_AS_STATIC ON CACHE INTERNAL "")
