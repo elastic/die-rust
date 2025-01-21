@@ -17,9 +17,11 @@ jobs:
       fail-fast: false
       matrix:
         variants:
-          -  {os: ubuntu-24.04, }
-          -  {os: windows-2019, }
-          # -  {os: macos-13, config: release}
+          -  {os: ubuntu-24.04, config: release}
+          # -  {os: ubuntu-24.04-arm, config: release}
+          -  {os: windows-2019, config: release}
+          -  {os: macos-13, config: release}
+          # -  {os: macos-14, config: release}
     runs-on: ${{ matrix.variants.os }}
     steps:
     - uses: actions/checkout@v4
@@ -34,6 +36,15 @@ jobs:
           libdie++/build/
           target/
         key: ${{ matrix.variants.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    - name: Build (macOS)
+      if: startsWith(matrix.variants.os, 'macos-')
+      run: |
+        python -m pip install aqtinstall --user --upgrade
+        python -m aqt install-qt -O libdie++/build mac desktop ${{ env.QT_BUILD_VERSION }} gcc_64
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/clang_64/lib"
+        cargo build -vv --tests --examples
+        echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
 
     - name: Build (Linux)
       if: startsWith(matrix.variants.os, 'ubuntu-')
@@ -56,6 +67,13 @@ jobs:
       if: startsWith(matrix.variants.os, 'ubuntu-')
       run: |
         export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/gcc_64/lib"
+        export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
+        cargo test -vv
+
+    - name: Tests (macOS)
+      if: startsWith(matrix.variants.os, 'macos-')
+      run: |
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/clang_64/lib"
         export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
         cargo test -vv
 
