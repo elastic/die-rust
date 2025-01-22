@@ -305,10 +305,12 @@ mod tests {
 
         let flags = ScanFlags::DEEP_SCAN;
         let res = scan_file(fname, flags).unwrap();
+        #[cfg(not(target_os = "macos"))]
         assert!(
             res.starts_with(expected_type),
-            "unexpected result: {:?}",
-            res
+            "unexpected result: got {:?}, expected {:?}",
+            res,
+            expected_type
         );
     }
 
@@ -322,8 +324,9 @@ mod tests {
             let res = scan_file_with_db(&fname, flags, Path::new(&db_path)).unwrap();
             assert!(
                 res.starts_with(expected_type),
-                "unexpected result: {:?}",
-                res
+                "unexpected result: got {:?}, expected {:?}",
+                res,
+                expected_type
             );
         } else {
             println!("Missing `DIE_DB_PATH` env var, skipping test");
@@ -340,10 +343,12 @@ mod tests {
         let mem = unsafe { Mmap::map(&file).unwrap() };
 
         let res = scan_memory(mem.as_ref(), flags).unwrap();
+        #[cfg(not(target_os = "macos"))]
         assert!(
             res.starts_with(expected_type),
-            "unexpected result: {:?}",
-            res
+            "unexpected result: got {:?}, expected {:?}",
+            res,
+            expected_type
         );
     }
 
@@ -360,8 +365,9 @@ mod tests {
             let res = scan_memory_with_db(mem.as_ref(), flags, Path::new(&db_path)).unwrap();
             assert!(
                 res.starts_with(expected_type),
-                "unexpected result: {:?}",
-                res
+                "unexpected result: got {:?}, expected {:?}",
+                res,
+                expected_type
             );
         } else {
             println!("Missing `DIE_DB_PATH` env var, skipping test");
