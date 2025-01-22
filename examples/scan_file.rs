@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use clap::{Parser, ValueEnum};
 use derive_more::derive::Display;
-use log::{error, info, LevelFilter};
+use log::{debug, error, info, LevelFilter};
 
 #[derive(Default, Clone, Debug, Display, ValueEnum)]
 enum OutputFormat {
@@ -36,29 +36,47 @@ fn main() -> Result<()> {
     let args = Args::parse();
 
     let log_level = match args.verbosity {
-        4 => LevelFilter::Trace, // -vvv
-        3 => LevelFilter::Debug, // -vv
+        2 => LevelFilter::Trace, // -vv
         1 => LevelFilter::Debug, // -v
         _ => LevelFilter::Info,
     };
 
     env_logger::Builder::new().filter(None, log_level).init();
 
+    debug!("Starting at log level {:?}", &log_level);
+
+    let mut scan_flags = die::ScanFlags::DEEP_SCAN;
+
+    if log_level >= LevelFilter::Debug {
+        scan_flags |= die::ScanFlags::VERBOSE;
+    }
+
     let res = match args.database {
-        Some(db) => die::scan_file_with_db(
-            args.filepath.as_path(),
-            die::ScanFlags::DEEP_SCAN,
-            db.as_path(),
-        ),
-        None => die::scan_file(args.filepath.as_path(), die::ScanFlags::DEEP_SCAN),
+        Some(db) => {
+            debug!(
+                "Scanning with flags {:?} and database path {}",
+                scan_flags,
+                args.filepath.as_path().to_string_lossy()
+            );
+
+            die::scan_file_with_db(args.filepath.as_path(), scan_flags, db.as_path())
+        }
+        None => {
+            debug!("Scanning with flags {:?}", scan_flags);
+            die::scan_file(args.filepath.as_path(), scan_flags)
+        }
     };
 
     match res {
-        Ok(s) => {
-            info!("{}", s);
+        Ok(sigmatch) => {
+            info!("{}: {}", args.filepath.to_string_lossy(), sigmatch);
         }
         Err(e) => {
-            error!("scan_file returned {:?}", e);
+            error!(
+                "scan_file() failed while scanning '{}', reason {:?}",
+                args.filepath.to_string_lossy(),
+                e
+            );
         }
     }
 

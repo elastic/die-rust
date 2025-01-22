@@ -16,6 +16,7 @@ bitflags! {
     /// The `ScanFlags` structure contains constants that can be used to specify
     /// the behavior of scanning processes. Each flag can be combined using bitwise
     /// operations to enable multiple options at once.
+    #[derive(Debug)]
     pub struct ScanFlags: u32 {
         /// Enables a thorough scanning process that examines all files and directories
         /// in detail.
