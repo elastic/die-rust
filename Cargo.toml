@@ -2,6 +2,16 @@
 name = "die"
 version = "0.1.0"
 edition = "2021"
+authors = ["Christophe Alladoum"]
+description = "Native Rust bindings for @horsicq's Detect-It-Easy"
+homepage = "https://github.com/elastic/die-rust"
+repository = "https://github.com/elastic/die-rust"
+license = "Apache-2.0"
+keywords = ["detect-it-easy", "malware", "packer"]
+categories = ["api-bindings"]
+readme = "README.md"
+
+build = "build.rs"
 
 [lib]
 crate-type = ["rlib"]
