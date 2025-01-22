@@ -115,6 +115,7 @@ fn install_macos() {
 
     if let Some(qt_lib_path) = option_env!("QT6_LIB_PATH") {
         println!("cargo:rustc-link-search=framework={}/", qt_lib_path);
+        println!("cargo:rustc-link-arg=-Wl,-rpath,{}", qt_lib_path);
     }
 
     println!("cargo:rustc-link-lib=framework=QtCore");
