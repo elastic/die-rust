@@ -109,9 +109,21 @@ fn install_linux() {
 
 #[cfg(target_os = "macos")]
 fn install_macos() {
-    todo!();
+    println!("cargo:rustc-link-search=native={}/die", INSTALL_DIR);
+    println!("cargo:rustc-link-search=native={}/die/lib", INSTALL_DIR);
     println!("cargo:rustc-link-lib=dylib=c++");
+    println!("cargo:rustc-link-lib=dylib=Qt6Core");
+    println!("cargo:rustc-link-lib=dylib=Qt6Qml");
+    println!("cargo:rustc-link-lib=dylib=Qt6Network");
     println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
+
+    println!("cargo:rustc-link-search=native={}/XCapstone", LIB_DIE_PATH);
+    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+        println!(
+            "cargo:rustc-link-search=native={}/XArchive/3rdparty/{}",
+            LIB_DIE_PATH, _mod
+        );
+    }
 }
 
 #[cfg(target_os = "windows")]
