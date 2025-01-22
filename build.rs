@@ -112,10 +112,14 @@ fn install_macos() {
     println!("cargo:rustc-link-search=native={}/die", INSTALL_DIR);
     println!("cargo:rustc-link-search=native={}/die/lib", INSTALL_DIR);
     println!("cargo:rustc-link-lib=dylib=c++");
-    println!("cargo:rustc-link-lib=dylib=Qt6Core");
-    println!("cargo:rustc-link-lib=dylib=Qt6Qml");
-    println!("cargo:rustc-link-lib=dylib=Qt6Network");
-    println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
+
+    if let Some(qt_lib_path) = option_env!("QT6_LIB_PATH") {
+        println!("cargo:rustc-link-search=framework={}/", qt_lib_path);
+    }
+
+    println!("cargo:rustc-link-lib=framework=QtCore");
+    println!("cargo:rustc-link-lib=framework=QtQml");
+    println!("cargo:rustc-link-lib=framework=QtNetwork");
 
     println!("cargo:rustc-link-search=native={}/XCapstone", LIB_DIE_PATH);
     for _mod in ["bzip2", "lzma", "zlib"].iter() {
