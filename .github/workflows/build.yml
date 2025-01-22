@@ -21,7 +21,7 @@ jobs:
           # -  {os: ubuntu-24.04-arm, config: release}
           -  {os: windows-2019, config: release}
           -  {os: macos-13, config: release}
-          # -  {os: macos-14, config: release}
+          -  {os: macos-14, config: release}
     runs-on: ${{ matrix.variants.os }}
     steps:
     - uses: actions/checkout@v4
