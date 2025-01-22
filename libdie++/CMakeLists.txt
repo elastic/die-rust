@@ -57,7 +57,7 @@ target_compile_definitions(die++
         DIELIB_VERSION="${DIELIB_VERSION}"
 )
 
-target_link_libraries(die++ PRIVATE $<TARGET_FILE:die> $<TARGET_PROPERTY:die,LINK_LIBRARIES>)
+target_link_libraries(die++ PRIVATE $<TARGET_FILE:die>)
 target_link_libraries(die++ PRIVATE Qt6::Core)
 target_link_libraries(die++ PRIVATE Qt6::Qml)
 target_link_libraries(die++ PRIVATE Qt6::Concurrent)
