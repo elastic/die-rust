@@ -36,21 +36,21 @@ jobs:
           target/
         key: ${{ matrix.variants.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Build (macOS)
-      if: startsWith(matrix.variants.os, 'macos-')
-      run: |
-        python -m pip install aqtinstall --user --upgrade
-        python -m aqt install-qt -O libdie++/build ${{ matrix.variants.aqt_os }} desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.aqt_compiler }}
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
-        cargo build -vv --tests --examples
-        echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
-
     - name: Build (Linux)
       if: startsWith(matrix.variants.os, 'ubuntu-')
       run: |
         python -m pip install aqtinstall --user --upgrade
         python -m aqt install-qt -O libdie++/build ${{ matrix.variants.aqt_os }} desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.aqt_compiler }}
         export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        cargo build -vv --tests --examples
+        echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
+
+    - name: Build (macOS)
+      if: startsWith(matrix.variants.os, 'macos-')
+      run: |
+        python -m pip install aqtinstall --user --upgrade
+        python -m aqt install-qt -O libdie++/build ${{ matrix.variants.aqt_os }} desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.aqt_compiler }}
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
         cargo build -vv --tests --examples
         echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
 
@@ -72,7 +72,7 @@ jobs:
     - name: Tests (macOS)
       if: startsWith(matrix.variants.os, 'macos-')
       run: |
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
         export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
         cargo test -vv
 
