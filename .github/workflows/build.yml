@@ -22,6 +22,7 @@ jobs:
           -  {os: windows-2019, config: release, compiler: msvc2019_64, aqt_os: windows, aqt_compiler: win64_msvc2019_64}
           -  {os: macos-13, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
           -  {os: macos-14, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
+          -  {os: macos-15, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
     runs-on: ${{ matrix.variants.os }}
     steps:
     - uses: actions/checkout@v4
