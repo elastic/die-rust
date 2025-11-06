@@ -1,8 +1,7 @@
-use std::env;
-
 #[allow(dead_code)]
 // build.rs
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
+use std::env;
 
 const QT_VERSION: &'static str = "6.10.0";
 const BASE_DIR: &'static str = ".";
@@ -21,13 +20,13 @@ const BUILD_TYPE: &'static str = "Release";
 
 fn get_qt_libs_path() -> String {
     #[cfg(target_os = "windows")]
-    return format!("./libdie++/build/{QT_VERSION}/msvc2022_64/lib");
+    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/msvc2022_64/lib");
 
     #[cfg(target_os = "macos")]
-    return format!("./libdie++/build/{QT_VERSION}/clang_64/lib");
+    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/clang_64/lib");
 
     #[cfg(target_os = "linux")]
-    return format!("./libdie++/build/{QT_VERSION}/gcc_64/lib");
+    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_64/lib");
 }
 
 fn qt_download() {
@@ -52,7 +51,7 @@ fn qt_download() {
             .args(["-m", "aqt", "install-qt", "-O", LIBDIE_BUILD_DIR]);
 
         #[cfg(target_os = "linux")]
-        cmd.args(["linux", "desktop", QT_VERSION, "gcc_64"]);
+        cmd.args(["linux", "desktop", QT_VERSION]);
         #[cfg(target_os = "macos")]
         cmd.args(["mac", "desktop", QT_VERSION, "clang_64"]);
         #[cfg(target_os = "windows")]
@@ -84,9 +83,8 @@ fn cmake_build_die() {
     {
         assert!(
             std::process::Command::new("cmake")
-                .current_dir(LIBDIE_BASE_DIR)
-                .args(["-S", "."])
-                .args(["-B", "build"])
+                .args(["-S", LIBDIE_BASE_DIR])
+                .args(["-B", LIBDIE_BUILD_DIR])
                 .spawn()
                 .unwrap()
                 .wait()
@@ -101,9 +99,8 @@ fn cmake_build_die() {
 
         assert!(
             std::process::Command::new("cmake")
-                .current_dir(LIBDIE_BASE_DIR)
-                .args(["--build", "build"])
-                .args(["-j", nb_cpu])
+                .args(["--build", LIBDIE_BUILD_DIR])
+                .args(["--parallel", nb_cpu])
                 .args(["--config", BUILD_TYPE])
                 .spawn()
                 .unwrap()
@@ -117,10 +114,9 @@ fn cmake_build_die() {
     {
         assert!(
             std::process::Command::new("cmake")
-                .current_dir(LIBDIE_BASE_DIR)
-                .args(["--install", "build"])
+                .args(["--install", LIBDIE_BUILD_DIR])
                 .args(["--config", BUILD_TYPE])
-                .args(["--prefix", "install"])
+                .args(["--prefix", LIBDIE_INSTALL_DIR])
                 .spawn()
                 .unwrap()
                 .wait()
@@ -255,20 +251,15 @@ fn should_rebuild_libdie() -> bool {
     let mut fpath = std::path::PathBuf::from(LIBDIE_INSTALL_DIR);
 
     #[cfg(target_os = "windows")]
-    {
-        fpath.push("die.lib");
-        fpath.exists() == false
-    }
+    fpath.push("die.lib");
 
     #[cfg(target_os = "linux")]
-    {
-        true
-    }
+    fpath.push("lib/libdie.a");
 
     #[cfg(target_os = "macos")]
-    {
-        true
-    }
+    fpath.push("lib/");
+
+    return fpath.exists() == false;
 }
 
 fn main() {

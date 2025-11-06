@@ -25,8 +25,10 @@ jobs:
           -  {os: macos-14, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
           -  {os: macos-15, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
     runs-on: ${{ matrix.variants.os }}
+    env:
+      QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
     - uses: actions/cache@v4
       with:
         path: |
@@ -58,7 +60,6 @@ jobs:
         echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
 
     - name: Build (Windows)
-      if: startsWith(matrix.variants.os, 'windows-')
       run: |
         python -m pip install aqtinstall --user --upgrade
         python -m aqt install-qt -O libdie++/build ${{ matrix.variants.aqt_os }} desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.aqt_compiler }}
