@@ -10,7 +10,6 @@ env:
   CARGO_TERM_COLOR: always
   QT_BUILD_VERSION: 6.10.0
 
-
 jobs:
   build:
     strategy:
@@ -41,25 +40,31 @@ jobs:
 
     - name: Build (Windows)
       if: startsWith(matrix.variants.os, 'windows-')
-      env:
-        QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
       run: |
+        $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        $env:DIE_DB_PATH="./db/db"
         cargo build -vv --tests --examples --release
         cargo test -vv --release
+        cd libdie++\install\die
+        cargo run --example scan_file -- -vv /bin/ls --database-path $env:DIE_DB_PATH
 
     - name: Build (Linux)
-      env:
-        QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
-        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+      if: startsWith(matrix.variants.os, 'ubuntu-')
       run: |
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        export DIE_DB_PATH="`pwd`/libdie++/install/die/db/db"
         cargo build -vv --tests --examples --release
         cargo test -vv --release
+        cargo run --example scan_file -- -vv /bin/ls --database-path ${DIE_DB_PATH}
 
     - name: Build (macOS)
-      env:
-        QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
-        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
+      if: startsWith(matrix.variants.os, 'macos-')
       run: |
+        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
+        export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
+        export DIE_DB_PATH="`pwd`/libdie++/install/die/db/db"
         cargo build -vv --tests --examples --release
         cargo test -vv --release
+        cargo run --example scan_file -- -vv /bin/ls --database-path ${DIE_DB_PATH}
 
