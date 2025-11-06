@@ -46,8 +46,6 @@ jobs:
         cargo build -vv --tests --examples
         cp ./libdie++/install/die/*.dll .
         cargo test -vv
-        cd libdie++\install\die
-        $env:DIE_DB_PATH=".\db"
         cargo run --example scan_file -- -vv /bin/ls --database-path $env:DIE_DB_PATH
 
     - name: Build (Linux)
