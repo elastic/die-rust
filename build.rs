@@ -23,7 +23,7 @@ fn get_qt_libs_path() -> String {
     return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/msvc2022_64/lib");
 
     #[cfg(target_os = "macos")]
-    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/clang_64/lib");
+    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/macos/lib");
 
     #[cfg(target_os = "linux")]
     return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_64/lib");

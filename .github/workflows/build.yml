@@ -25,8 +25,6 @@ jobs:
           -  {os: macos-14, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
           -  {os: macos-15, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
     runs-on: ${{ matrix.variants.os }}
-    env:
-      QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
     steps:
     - uses: actions/checkout@v5
     - uses: actions/cache@v4
@@ -41,48 +39,30 @@ jobs:
           target/
         key: ${{ matrix.variants.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Build (Linux)
-      if: startsWith(matrix.variants.os, 'ubuntu-')
+    - name: Build
+      env:
+        QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
       run: |
-        python -m pip install aqtinstall --user --upgrade
-        python -m aqt install-qt -O libdie++/build ${{ matrix.variants.aqt_os }} desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.aqt_compiler }}
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
-        cargo build -vv --tests --examples
-        echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
-
-    - name: Build (macOS)
-      if: startsWith(matrix.variants.os, 'macos-')
-      run: |
-        python -m pip install aqtinstall --user --upgrade
-        python -m aqt install-qt -O libdie++/build ${{ matrix.variants.aqt_os }} desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.aqt_compiler }}
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
-        cargo build -vv --tests --examples
-        echo QT6_LIB_PATH=${QT6_LIB_PATH} >> $GITHUB_ENV
-
-    - name: Build (Windows)
-      run: |
-        python -m pip install aqtinstall --user --upgrade
-        python -m aqt install-qt -O libdie++/build ${{ matrix.variants.aqt_os }} desktop ${{ env.QT_BUILD_VERSION }} ${{ matrix.variants.aqt_compiler }}
-        $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
         cargo build -vv --tests --examples
 
-    - name: Tests (Linux)
+    - name: Test Setup (Linux)
       if: startsWith(matrix.variants.os, 'ubuntu-')
       run: |
         export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
         export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
-        cargo test -vv
 
-    - name: Tests (macOS)
+    - name: Test Setup (macOS)
       if: startsWith(matrix.variants.os, 'macos-')
       run: |
         export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
         export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
-        cargo test -vv
 
-    - name: Tests (Windows)
+    - name: Test Setup (Windows)
       if: startsWith(matrix.variants.os, 'windows-')
       run: |
         $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
         cp -v ./libdie++/install/die/*.dll .
+
+    - name: Test
+      run: |
         cargo test -vv
