@@ -160,8 +160,11 @@ fn setup_common() {
 
 #[cfg(target_os = "linux")]
 fn install() {
-    println!("cargo:rustc-link-search=native={}/die", INSTALL_DIR);
-    println!("cargo:rustc-link-search=native={}/die/lib", INSTALL_DIR);
+    println!("cargo:rustc-link-search=native={}/die", LIBDIE_INSTALL_DIR);
+    println!(
+        "cargo:rustc-link-search=native={}/die/lib",
+        LIBDIE_INSTALL_DIR
+    );
     println!("cargo:rustc-link-lib=dylib=stdc++");
     println!("cargo:rustc-link-lib=dylib=Qt6Core");
     println!("cargo:rustc-link-lib=dylib=Qt6Qml");
@@ -179,8 +182,11 @@ fn install() {
 
 #[cfg(target_os = "macos")]
 fn install() {
-    println!("cargo:rustc-link-search=native={}/die", INSTALL_DIR);
-    println!("cargo:rustc-link-search=native={}/die/lib", INSTALL_DIR);
+    println!("cargo:rustc-link-search=native={}/die", LIBDIE_INSTALL_DIR);
+    println!(
+        "cargo:rustc-link-search=native={}/die/lib",
+        LIBDIE_INSTALL_DIR
+    );
     println!("cargo:rustc-link-lib=dylib=c++");
 
     if let Some(qt_lib_path) = option_env!("QT6_LIB_PATH") {
@@ -249,9 +255,20 @@ fn should_rebuild_libdie() -> bool {
     let mut fpath = std::path::PathBuf::from(LIBDIE_INSTALL_DIR);
 
     #[cfg(target_os = "windows")]
-    fpath.push("die.lib");
+    {
+        fpath.push("die.lib");
+        fpath.exists() == false
+    }
 
-    fpath.exists() == false
+    #[cfg(target_os = "linux")]
+    {
+        true
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        true
+    }
 }
 
 fn main() {
