@@ -12,20 +12,8 @@ This module provides Rust bindings for the [Detect-It-Easy](https://github.com/h
 
 ### Build
 
-> [!IMPORTANT]
-> [**Qt6**](https://qt.io) libraries must be installed for Detect-it-Easy to work.
-> On Linux and macOS, `die-rust` can be built using the Qt6 provided by the typical package management systems (`apt`, `dnf`, `brew`, etc.).
-> If you do not wish to install those packages system-wide, if you are running Windows, or if you wish/need to use a specific version of Qt6, it is possible to build `die-rust` by installing those libraries in a specific folder, using [`aqtinstall`](https://github.com/miurahr/aqtinstall) - (see below). Then build `die-rust` by passing the paths to the Qt6 libraries with the `QT6_LIB_PATH` environment.
-
-### As a dependency
-
-Use `cargo` to add `die-rust` as a dependency to your project:
-
-```console
-cargo add --git https://github.com/elastic/die-rust.git
-```
-
-### On the terminal
+> [!Warning]
+> `Detect-It-Easy` has a hard requirement for Qt6 libraries. `cargo build` will manage the entire building process in an automated, but to be able to link against Qt6, it will use the library [`aqtinstall`](). Therefore `python` must be installed on the system. Note that downloading the Qt libraries may take some time, depending on your Internet connection.
 
 The installation can be done using `cargo`.
 
@@ -34,40 +22,6 @@ git clone https://github.com/elastic/die-rust.git
 cd die-rust
 cargo build
 ```
-
-The build requires Qt6 libraries. On Linux/macOS they can usually be obtained from the system's package manager. To use a specific Qt6 version, it is possible to use `aqtinstall` as follow
-
-### Linux
-
-```bash
-export QT_BUILD_VERSION=6.10.0
-git clone https://github.com/elastic/die-rust.git && cd die-rust
-python -m pip install aqtinstall
-python -m aqt install-qt -O ./libdie++/build/ linux desktop ${QT_BUILD_VERSION} gcc_64
-export QT6_LIB_PATH=./libdie++/build/6.10.0/gcc_64/lib
-```
-
-### macOS
-
-```bash
-export QT_BUILD_VERSION=6.10.0
-git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
-python -m pip install aqtinstall
-python -m aqt install-qt -O ./libdie++/build/ mac desktop ${QT_BUILD_VERSION} clang_64
-export QT6_LIB_PATH=./libdie++/build/6.10.0/clang_64/lib # macos
-```
-
-### Windows
-
-```pwsh
-$env:QT_BUILD_VERSION="6.10.0"
-git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
-python -m pip install aqtinstall
-python -m aqt install-qt -O ./libdie++/build/ windows desktop $env:QT_BUILD_VERSION win64_msvc2022_64
-$env:QT6_LIB_PATH="./libdie++/build/6.10.0/msvc2022_64/lib"
-```
-
-
 
 
 
