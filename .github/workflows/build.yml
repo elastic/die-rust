@@ -44,22 +44,22 @@ jobs:
       env:
         QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
       run: |
-        cargo build -vv --tests --examples
-        cargo test -vv
+        cargo build -vv --tests --examples --release
+        cargo test -vv --release
 
     - name: Build (Linux)
       env:
         QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
-        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:${QT6_LIB_PATH}"
+        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
       run: |
-        cargo build -vv --tests --examples
-        cargo test -vv
+        cargo build -vv --tests --examples --release
+        cargo test -vv --release
 
     - name: Build (macOS)
       env:
         QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
-        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:${QT6_LIB_PATH}"
+        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
       run: |
-        cargo build -vv --tests --examples
-        cargo test -vv
+        cargo build -vv --tests --examples --release
+        cargo test -vv --release
 
