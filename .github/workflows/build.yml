@@ -16,10 +16,10 @@ jobs:
       fail-fast: false
       matrix:
         variants:
-          -  {os: ubuntu-22.04, config: release, compiler: gcc_64, aqt_os: linux, aqt_compiler: gcc_64}
+          # -  {os: ubuntu-22.04, config: release, compiler: gcc_64, aqt_os: linux, aqt_compiler: gcc_64}
           -  {os: ubuntu-24.04, config: release, compiler: gcc_64, aqt_os: linux, aqt_compiler: gcc_64}
           # -  {os: ubuntu-24.04-arm, config: release, compiler: linux_gcc_arm64, aqt_os: linux_arm64, aqt_compiler: linux_gcc_arm64}
-          -  {os: windows-2022, config: release, compiler: msvc2022_64, aqt_os: windows, aqt_compiler: win64_msvc2022_64}
+          # -  {os: windows-2022, config: release, compiler: msvc2022_64, aqt_os: windows, aqt_compiler: win64_msvc2022_64}
           -  {os: windows-2025, config: release, compiler: msvc2022_64, aqt_os: windows, aqt_compiler: win64_msvc2022_64}
           -  {os: macos-14, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
           # -  {os: macos-15, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}

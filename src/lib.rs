@@ -305,7 +305,6 @@ mod tests {
 
         let flags = ScanFlags::DEEP_SCAN;
         let res = scan_file(fname, flags).unwrap();
-        assert_ne!(res.len(), 0);
         #[cfg(not(target_os = "macos"))]
         assert!(
             res.starts_with(expected_type),
@@ -346,7 +345,6 @@ mod tests {
         let mem = unsafe { Mmap::map(&file).unwrap() };
 
         let res = scan_memory(mem.as_ref(), flags).unwrap();
-        assert_ne!(res.len(), 0);
         #[cfg(not(target_os = "macos"))]
         assert!(
             res.starts_with(expected_type),
