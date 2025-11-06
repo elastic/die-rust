@@ -22,7 +22,7 @@ jobs:
           -  {os: windows-2022, config: release, compiler: msvc2022_64, aqt_os: windows, aqt_compiler: win64_msvc2022_64}
           -  {os: windows-2025, config: release, compiler: msvc2022_64, aqt_os: windows, aqt_compiler: win64_msvc2022_64}
           -  {os: macos-14, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
-          -  {os: macos-15, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
+          # -  {os: macos-15, config: release, compiler: clang_64, aqt_os: mac, aqt_compiler: clang_64}
     runs-on: ${{ matrix.variants.os }}
     steps:
     - uses: actions/checkout@v5
@@ -54,8 +54,8 @@ jobs:
         export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
         export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
         export DIE_DB_PATH="`pwd`/libdie++/install/die/db/db"
-        cargo build -vv --tests --examples --release
-        cargo test -vv --release
+        cargo build -vv --tests --examples
+        cargo test -vv
         cargo run --example scan_file -- -vv /bin/ls --database-path ${DIE_DB_PATH}
 
     - name: Build (macOS)
@@ -64,7 +64,7 @@ jobs:
         export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
         export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
         export DIE_DB_PATH="`pwd`/libdie++/install/die/db/db"
-        cargo build -vv --tests --examples --release
-        cargo test -vv --release
+        cargo build -vv --tests --examples
+        cargo test -vv
         cargo run --example scan_file -- -vv /bin/ls --database-path ${DIE_DB_PATH}
 

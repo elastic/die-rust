@@ -143,15 +143,15 @@ fn setup_common() {
         println!("cargo:rustc-link-search=native={}", qt_lib_path);
     }
 
-    if BUILD_TYPE == "Release" {
-        println!("cargo:rustc-link-lib=static=Qt6Core");
-        println!("cargo:rustc-link-lib=static=Qt6Qml");
-        println!("cargo:rustc-link-lib=static=Qt6Network");
+    // if BUILD_TYPE == "Release" {
+    //     println!("cargo:rustc-link-lib=static=Qt6Core");
+    //     println!("cargo:rustc-link-lib=static=Qt6Qml");
+    //     println!("cargo:rustc-link-lib=static=Qt6Network");
 
-        println!("cargo:rustc-link-lib=dylib=Qt6Core");
-        println!("cargo:rustc-link-lib=dylib=Qt6Qml");
-        println!("cargo:rustc-link-lib=dylib=Qt6Network");
-    }
+    //     println!("cargo:rustc-link-lib=dylib=Qt6Core");
+    //     println!("cargo:rustc-link-lib=dylib=Qt6Qml");
+    //     println!("cargo:rustc-link-lib=dylib=Qt6Network");
+    // }
 }
 
 #[cfg(target_os = "linux")]
