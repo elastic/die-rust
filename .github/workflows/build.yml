@@ -43,9 +43,9 @@ jobs:
       run: |
         $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
         $env:DIE_DB_PATH="./libdie++/install/die/db/db"
-        cargo build -vv --tests --examples
+        cargo build -vv --tests --examples --release
         cp ./libdie++/install/die/*.dll .
-        cargo test -vv
+        cargo test -vv --release
         cargo run --example scan_file -- -vv C:\Windows\System32\winver.exe
 
     - name: Build (Linux)
