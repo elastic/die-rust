@@ -42,11 +42,11 @@ jobs:
       if: startsWith(matrix.variants.os, 'windows-')
       run: |
         $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
-        $env:DIE_DB_PATH="./libdie++/install/db"
+        $env:DIE_DB_PATH="./libdie++/install/die/db/db"
         cargo build -vv --tests --examples
         cp ./libdie++/install/die/*.dll .
         cargo test -vv
-        cargo run --example scan_file -- -vv /bin/ls --database-path $env:DIE_DB_PATH
+        cargo run --example scan_file -- -vv C:\Windows\System32\winver.exe
 
     - name: Build (Linux)
       if: startsWith(matrix.variants.os, 'ubuntu-')
