@@ -143,15 +143,14 @@ fn setup_common() {
         println!("cargo:rustc-link-search=native={}", qt_lib_path);
     }
 
-    // if BUILD_TYPE == "Release" {
-    //     println!("cargo:rustc-link-lib=static=Qt6Core");
-    //     println!("cargo:rustc-link-lib=static=Qt6Qml");
-    //     println!("cargo:rustc-link-lib=static=Qt6Network");
-
-    //     println!("cargo:rustc-link-lib=dylib=Qt6Core");
-    //     println!("cargo:rustc-link-lib=dylib=Qt6Qml");
-    //     println!("cargo:rustc-link-lib=dylib=Qt6Network");
-    // }
+    if BUILD_TYPE == "Release" {
+        println!("cargo:rustc-link-lib=static=Qt6Core");
+        println!("cargo:rustc-link-lib=static=Qt6Qml");
+        println!("cargo:rustc-link-lib=static=Qt6Network");
+        println!("cargo:rustc-link-lib=dylib=Qt6Core");
+        println!("cargo:rustc-link-lib=dylib=Qt6Qml");
+        println!("cargo:rustc-link-lib=dylib=Qt6Network");
+    }
 }
 
 #[cfg(target_os = "linux")]
@@ -205,10 +204,37 @@ fn install() {
 
 #[cfg(target_os = "windows")]
 fn install() {
+    match BUILD_TYPE {
+        "Release" => {
+            println!("cargo:rustc-link-lib=static=Qt6Core");
+            println!("cargo:rustc-link-lib=static=Qt6Qml");
+            println!("cargo:rustc-link-lib=static=Qt6Network");
+            println!("cargo:rustc-link-lib=dylib=Qt6Core");
+            println!("cargo:rustc-link-lib=dylib=Qt6Qml");
+            println!("cargo:rustc-link-lib=dylib=Qt6Network");
+        }
+        "Debug" => {
+            println!("cargo:rustc-link-lib=static=Qt6Cored");
+            println!("cargo:rustc-link-lib=static=Qt6Qmld");
+            println!("cargo:rustc-link-lib=static=Qt6Networkd");
+            println!("cargo:rustc-link-lib=dylib=Qt6Cored");
+            println!("cargo:rustc-link-lib=dylib=Qt6Qmld");
+            println!("cargo:rustc-link-lib=dylib=Qt6Networkd");
+            println!("cargo:rustc-link-search=native={}/ucrt/x64", MSVC_PATH);
+            println!("cargo:rustc-link-lib=static=ucrtd");
+        }
+        _ => {
+            unimplemented!()
+        }
+    };
+
+    println!("cargo:rustc-link-search=native={}/die", LIBDIE_INSTALL_DIR);
+
     println!(
         "cargo:rustc-link-search=native={}/die/dielib",
         LIBDIE_INSTALL_DIR
     );
+
     println!(
         "cargo:rustc-link-search=native={}/{}",
         LIBDIE_BUILD_DIR, BUILD_TYPE
@@ -229,18 +255,6 @@ fn install() {
     );
     println!("cargo:rustc-link-lib=dylib=Crypt32");
     println!("cargo:rustc-link-lib=dylib=Wintrust");
-
-    if BUILD_TYPE == "Debug" {
-        println!("cargo:rustc-link-lib=static=Qt6Cored");
-        println!("cargo:rustc-link-lib=static=Qt6Qmld");
-        println!("cargo:rustc-link-lib=static=Qt6Networkd");
-        println!("cargo:rustc-link-lib=dylib=Qt6Cored");
-        println!("cargo:rustc-link-lib=dylib=Qt6Qmld");
-        println!("cargo:rustc-link-lib=dylib=Qt6Networkd");
-
-        println!("cargo:rustc-link-search=native={}/ucrt/x64", MSVC_PATH);
-        println!("cargo:rustc-link-lib=static=ucrtd");
-    }
 }
 
 fn is_qt_missing() -> bool {
@@ -248,6 +262,18 @@ fn is_qt_missing() -> bool {
 }
 
 fn should_rebuild_libdie() -> bool {
+    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+        #[cfg(target_os = "windows")]
+        let path_str = format!("{}/XArchive/3rdparty/{}/{}", LIB_DIE_PATH, _mod, BUILD_TYPE);
+
+        #[cfg(not(target_os = "windows"))]
+        let path_str = format!("{}/XArchive/3rdparty/{}", LIB_DIE_PATH, _mod);
+
+        if !std::path::Path::new(path_str.as_str()).exists() {
+            return true;
+        }
+    }
+
     let mut fpath = std::path::PathBuf::from(LIBDIE_INSTALL_DIR);
 
     #[cfg(target_os = "windows")]

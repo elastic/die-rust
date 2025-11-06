@@ -10,3 +10,4 @@ libdie++/build
 libdie++/install
 .vscode
 aqtinstall.log
+*.dll
