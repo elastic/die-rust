@@ -1,10 +1,14 @@
+use std::env;
+
+#[allow(dead_code)]
 // build.rs
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
 
-const BASE_DIR: &'static str = "./libdie++";
-#[allow(dead_code)]
-const BUILD_DIR: &'static str = "./libdie++/build";
-const INSTALL_DIR: &'static str = "./libdie++/install";
+const QT_VERSION: &'static str = "6.10.0";
+const BASE_DIR: &'static str = ".";
+const LIBDIE_BASE_DIR: &'static str = "./libdie++";
+const LIBDIE_BUILD_DIR: &'static str = "./libdie++/build";
+const LIBDIE_INSTALL_DIR: &'static str = "./libdie++/install";
 const LIB_DIE_PATH: &'static str = "./libdie++/build/_deps/dielibrary-build/src";
 
 #[cfg(target_os = "windows")]
@@ -15,52 +19,118 @@ const BUILD_TYPE: &'static str = "Debug";
 #[cfg(not(debug_assertions))]
 const BUILD_TYPE: &'static str = "Release";
 
+fn get_qt_libs_path() -> String {
+    #[cfg(target_os = "windows")]
+    return format!("./libdie++/build/{QT_VERSION}/msvc2022_64/lib");
+
+    #[cfg(target_os = "macos")]
+    return format!("./libdie++/build/{QT_VERSION}/clang_64/lib");
+
+    #[cfg(target_os = "linux")]
+    return format!("./libdie++/build/{QT_VERSION}/gcc_64/lib");
+}
+
+fn qt_download() {
+    // Install AQT
+    {
+        assert!(
+            std::process::Command::new("python")
+                .current_dir(BASE_DIR)
+                .args(["-m", "pip", "install", "--user", "--upgrade", "aqtinstall"])
+                .spawn()
+                .unwrap()
+                .wait()
+                .expect("failed to install AQT")
+                .success()
+        );
+    }
+
+    // Install QT using AQT
+    {
+        let mut cmd = std::process::Command::new("python");
+        cmd.current_dir(BASE_DIR)
+            .args(["-m", "aqt", "install-qt", "-O", LIBDIE_BUILD_DIR]);
+
+        #[cfg(target_os = "linux")]
+        cmd.args(["linux", "desktop", QT_VERSION, "gcc_64"]);
+        #[cfg(target_os = "macos")]
+        cmd.args(["mac", "desktop", QT_VERSION, "clang_64"]);
+        #[cfg(target_os = "windows")]
+        cmd.args(["windows", "desktop", QT_VERSION, "win64_msvc2022_64"]);
+
+        assert!(
+            cmd.spawn()
+                .unwrap()
+                .wait()
+                .expect(format!("failed to install Qt {QT_VERSION} using AQT").as_str())
+                .success()
+        );
+    }
+
+    // Add to env var
+    {
+        let fpath = get_qt_libs_path();
+
+        println!("cargo:rustc-env=QT6_LIB_PATH=\"{fpath}\"");
+        unsafe {
+            env::set_var("QT6_LIB_PATH", fpath.as_str());
+            env::set_var("Qt6_DIR", fpath.as_str());
+        }
+    }
+}
+
 fn cmake_build_die() {
     // CMake configure
     {
-        assert!(std::process::Command::new("cmake")
-            .current_dir(BASE_DIR)
-            .args(["-S", "."])
-            .args(["-B", "build"])
-            .spawn()
-            .unwrap()
-            .wait()
-            .expect("failed to configure cmake")
-            .success());
+        assert!(
+            std::process::Command::new("cmake")
+                .current_dir(LIBDIE_BASE_DIR)
+                .args(["-S", "."])
+                .args(["-B", "build"])
+                .spawn()
+                .unwrap()
+                .wait()
+                .expect("failed to configure cmake")
+                .success()
+        );
     }
 
     // CMake build
     {
         let nb_cpu = "4";
 
-        assert!(std::process::Command::new("cmake")
-            .args(["--build", "build"])
-            .args(["-j", nb_cpu])
-            .args(["--config", BUILD_TYPE])
-            .current_dir(BASE_DIR)
-            .spawn()
-            .unwrap()
-            .wait()
-            .expect("failed to build with cmake")
-            .success());
+        assert!(
+            std::process::Command::new("cmake")
+                .current_dir(LIBDIE_BASE_DIR)
+                .args(["--build", "build"])
+                .args(["-j", nb_cpu])
+                .args(["--config", BUILD_TYPE])
+                .spawn()
+                .unwrap()
+                .wait()
+                .expect("failed to build with cmake")
+                .success()
+        );
     }
 
     // CMake install
     {
-        assert!(std::process::Command::new("cmake")
-            .args(["--install", "build"])
-            .args(["--config", BUILD_TYPE])
-            .args(["--prefix", "install"])
-            .current_dir(BASE_DIR)
-            .spawn()
-            .unwrap()
-            .wait()
-            .expect("failed to install with cmake")
-            .success());
+        assert!(
+            std::process::Command::new("cmake")
+                .current_dir(LIBDIE_BASE_DIR)
+                .args(["--install", "build"])
+                .args(["--config", BUILD_TYPE])
+                .args(["--prefix", "install"])
+                .spawn()
+                .unwrap()
+                .wait()
+                .expect("failed to install with cmake")
+                .success()
+        );
     }
 }
 
-fn install_common() {
+fn setup_common() {
     // die & die++
     println!("cargo:rustc-link-lib=static=die++");
     println!("cargo:rustc-link-lib=static=die");
@@ -89,7 +159,7 @@ fn install_common() {
 }
 
 #[cfg(target_os = "linux")]
-fn install_linux() {
+fn install() {
     println!("cargo:rustc-link-search=native={}/die", INSTALL_DIR);
     println!("cargo:rustc-link-search=native={}/die/lib", INSTALL_DIR);
     println!("cargo:rustc-link-lib=dylib=stdc++");
@@ -108,7 +178,7 @@ fn install_linux() {
 }
 
 #[cfg(target_os = "macos")]
-fn install_macos() {
+fn install() {
     println!("cargo:rustc-link-search=native={}/die", INSTALL_DIR);
     println!("cargo:rustc-link-search=native={}/die/lib", INSTALL_DIR);
     println!("cargo:rustc-link-lib=dylib=c++");
@@ -132,15 +202,18 @@ fn install_macos() {
 }
 
 #[cfg(target_os = "windows")]
-fn install_windows() {
-    println!("cargo:rustc-link-search=native={}/die/dielib", INSTALL_DIR);
+fn install() {
+    println!(
+        "cargo:rustc-link-search=native={}/die/dielib",
+        LIBDIE_INSTALL_DIR
+    );
     println!(
         "cargo:rustc-link-search=native={}/{}",
-        BUILD_DIR, BUILD_TYPE
+        LIBDIE_BUILD_DIR, BUILD_TYPE
     );
     println!(
         "cargo:rustc-link-search=native={}/_deps/dielibrary-build/src/dielib/{}",
-        BUILD_DIR, BUILD_TYPE
+        LIBDIE_BUILD_DIR, BUILD_TYPE
     );
     for _mod in ["bzip2", "lzma", "zlib"].iter() {
         println!(
@@ -168,23 +241,33 @@ fn install_windows() {
     }
 }
 
+fn is_qt_missing() -> bool {
+    std::path::Path::new(get_qt_libs_path().as_str()).exists() == false
+}
+
+fn should_rebuild_libdie() -> bool {
+    let mut fpath = std::path::PathBuf::from(LIBDIE_INSTALL_DIR);
+
+    #[cfg(target_os = "windows")]
+    fpath.push("die.lib");
+
+    fpath.exists() == false
+}
+
 fn main() {
-    cmake_build_die();
+    #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+    unimplemented!();
 
-    install_common();
-
-    if cfg!(target_os = "linux") {
-        #[cfg(target_os = "linux")]
-        install_linux();
-    } else if cfg!(target_os = "macos") {
-        #[cfg(target_os = "macos")]
-        install_macos();
-    } else if cfg!(target_os = "windows") {
-        #[cfg(target_os = "windows")]
-        install_windows();
-    } else {
-        unimplemented!();
+    if is_qt_missing() {
+        qt_download();
     }
+
+    if should_rebuild_libdie() {
+        cmake_build_die();
+    }
+
+    setup_common();
+    install();
 
     println!("cargo:rerun-if-changed=src/lib.rs");
 }

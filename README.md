@@ -40,31 +40,31 @@ The build requires Qt6 libraries. On Linux/macOS they can usually be obtained fr
 ### Linux
 
 ```bash
-export QT_BUILD_VERSION=6.2.2
+export QT_BUILD_VERSION=6.10.0
 git clone https://github.com/elastic/die-rust.git && cd die-rust
 python -m pip install aqtinstall
 python -m aqt install-qt -O ./libdie++/build/ linux desktop ${QT_BUILD_VERSION} gcc_64
-export QT6_LIB_PATH=./libdie++/build/6.2.2/gcc_64/lib
+export QT6_LIB_PATH=./libdie++/build/6.10.0/gcc_64/lib
 ```
 
 ### macOS
 
 ```bash
-export QT_BUILD_VERSION=6.2.2
+export QT_BUILD_VERSION=6.10.0
 git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
 python -m pip install aqtinstall
 python -m aqt install-qt -O ./libdie++/build/ mac desktop ${QT_BUILD_VERSION} clang_64
-export QT6_LIB_PATH=./libdie++/build/6.2.2/clang_64/lib # macos
+export QT6_LIB_PATH=./libdie++/build/6.10.0/clang_64/lib # macos
 ```
 
 ### Windows
 
 ```pwsh
-$env:QT_BUILD_VERSION="6.2.2"
+$env:QT_BUILD_VERSION="6.10.0"
 git clone https://github.com/calladoum-elastic/die-rust.git && cd die-rust
 python -m pip install aqtinstall
-python -m aqt install-qt -O ./libdie++/build/ windows desktop $env:QT_BUILD_VERSION win64_msvc2019_64
-$env:QT6_LIB_PATH="./libdie++/build/6.2.2/msvc2019_64/lib"
+python -m aqt install-qt -O ./libdie++/build/ windows desktop $env:QT_BUILD_VERSION win64_msvc2022_64
+$env:QT6_LIB_PATH="./libdie++/build/6.10.0/msvc2022_64/lib"
 ```
 
 
