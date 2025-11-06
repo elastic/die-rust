@@ -39,30 +39,27 @@ jobs:
           target/
         key: ${{ matrix.variants.os }}-${{ runner.arch }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-    - name: Build
+    - name: Build (Windows)
+      if: startsWith(matrix.variants.os, 'windows-')
       env:
         QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
       run: |
         cargo build -vv --tests --examples
-
-    - name: Test Setup (Linux)
-      if: startsWith(matrix.variants.os, 'ubuntu-')
-      run: |
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
-        export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
-
-    - name: Test Setup (macOS)
-      if: startsWith(matrix.variants.os, 'macos-')
-      run: |
-        export QT6_LIB_PATH="`pwd`/libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
-        export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${QT6_LIB_PATH}
-
-    - name: Test Setup (Windows)
-      if: startsWith(matrix.variants.os, 'windows-')
-      run: |
-        $env:QT6_LIB_PATH="./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
-        cp -v ./libdie++/install/die/*.dll .
-
-    - name: Test
-      run: |
         cargo test -vv
+
+    - name: Build (Linux)
+      env:
+        QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/${{ matrix.variants.compiler }}/lib"
+        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:${QT6_LIB_PATH}"
+      run: |
+        cargo build -vv --tests --examples
+        cargo test -vv
+
+    - name: Build (macOS)
+      env:
+        QT6_LIB_PATH: "./libdie++/build/${{ env.QT_BUILD_VERSION }}/macos/lib"
+        LD_LIBRARY_PATH: "${LD_LIBRARY_PATH}:${QT6_LIB_PATH}"
+      run: |
+        cargo build -vv --tests --examples
+        cargo test -vv
+

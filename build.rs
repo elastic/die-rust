@@ -257,7 +257,7 @@ fn should_rebuild_libdie() -> bool {
     fpath.push("lib/libdie.a");
 
     #[cfg(target_os = "macos")]
-    fpath.push("lib/");
+    fpath.push("lib/libdie.a");
 
     return fpath.exists() == false;
 }
