@@ -46,7 +46,7 @@ jobs:
         cargo build -vv --tests --examples --release
         cp ./libdie++/install/die/*.dll .
         cargo test -vv --release
-        cargo run --example scan_file -- -vv C:\Windows\System32\winver.exe
+        cargo run --release --example scan_file -- -vv C:\Windows\System32\winver.exe
 
     - name: Build (Linux)
       if: startsWith(matrix.variants.os, 'ubuntu-')
