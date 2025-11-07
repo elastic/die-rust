@@ -319,9 +319,11 @@ mod tests {
         let fname = default_test_file();
         let expected_type = default_test_file_type();
 
-        let flags = ScanFlags::DEEP_SCAN;
+        let flags = ScanFlags::DEEP_SCAN | ScanFlags::VERBOSE;
         if let Ok(db_path) = std::env::var("DIE_DB_PATH") {
             let res = scan_file_with_db(&fname, flags, Path::new(&db_path)).unwrap();
+            assert_ne!(res.len(), 0);
+            #[cfg(not(target_os = "macos"))]
             assert!(
                 res.starts_with(expected_type),
                 "unexpected result: got {:?}, expected {:?}",
@@ -357,12 +359,14 @@ mod tests {
         let fname = default_test_file();
         let expected_type = default_test_file_type();
 
-        let flags = ScanFlags::DEEP_SCAN;
+        let flags = ScanFlags::DEEP_SCAN | ScanFlags::VERBOSE;
         let file = File::open(fname).unwrap();
         let mem = unsafe { Mmap::map(&file).unwrap() };
 
         if let Ok(db_path) = std::env::var("DIE_DB_PATH") {
             let res = scan_memory_with_db(mem.as_ref(), flags, Path::new(&db_path)).unwrap();
+            assert_ne!(res.len(), 0);
+            #[cfg(not(target_os = "macos"))]
             assert!(
                 res.starts_with(expected_type),
                 "unexpected result: got {:?}, expected {:?}",

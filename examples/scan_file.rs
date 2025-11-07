@@ -1,11 +1,11 @@
 type Error = Box<dyn std::error::Error>;
 type Result<T> = std::result::Result<T, Error>;
 
-use std::path::PathBuf;
+use std::{env, path::PathBuf};
 
 use clap::{Parser, ValueEnum};
 use derive_more::derive::Display;
-use log::{debug, error, info, LevelFilter};
+use log::{LevelFilter, debug, error, info, trace};
 
 #[derive(Default, Clone, Debug, Display, ValueEnum)]
 enum OutputFormat {
@@ -42,29 +42,39 @@ fn main() -> Result<()> {
     };
 
     env_logger::Builder::new().filter(None, log_level).init();
+    trace!("env_logger initialized");
 
     debug!("Starting at log level {:?}", &log_level);
 
     let mut scan_flags = die::ScanFlags::DEEP_SCAN;
 
     if log_level >= LevelFilter::Debug {
+        trace!("Setting VERBOSE scan flag");
         scan_flags |= die::ScanFlags::VERBOSE;
     }
 
+    debug!("Scanning with flags {:?}", scan_flags,);
+
     let res = match args.database {
         Some(db) => {
-            debug!(
-                "Scanning with flags {:?} and database path {}",
-                scan_flags,
+            trace!(
+                "Using database path {} from command line",
                 args.filepath.as_path().to_string_lossy()
             );
 
             die::scan_file_with_db(args.filepath.as_path(), scan_flags, db.as_path())
         }
-        None => {
-            debug!("Scanning with flags {:?}", scan_flags);
-            die::scan_file(args.filepath.as_path(), scan_flags)
-        }
+        None => match env::var("DIE_DB_PATH") {
+            Ok(db_str) => {
+                let db_path = PathBuf::from(db_str);
+                trace!("Using database path from environment {:?}", &db_path);
+                die::scan_file_with_db(args.filepath.as_path(), scan_flags, db_path.as_path())
+            }
+            Err(_) => {
+                trace!("Scanning without database");
+                die::scan_file(args.filepath.as_path(), scan_flags)
+            }
+        },
     };
 
     match res {

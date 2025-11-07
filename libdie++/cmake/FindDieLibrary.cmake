@@ -1,10 +1,10 @@
 include(FetchContent)
 
 set(ROOT_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
-set(QT_BUILD_VERSION "6.2.2")
+set(QT_BUILD_VERSION "6.10.0")
 
 if(WIN32)
-  set(QT_BUILD_COMPILER "msvc2019_64")
+  set(QT_BUILD_COMPILER "msvc2022_64")
 elseif(LINUX)
   set(QT_BUILD_COMPILER "gcc_64")
 elseif(APPLE)
