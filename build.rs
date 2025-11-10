@@ -26,7 +26,13 @@ fn get_qt_libs_path() -> String {
     return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/macos/lib");
 
     #[cfg(target_os = "linux")]
-    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_64/lib");
+    {
+        #[cfg(target_arch = "aarch64")]
+        return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_arm64/lib");
+
+        #[cfg(target_arch = "x86_64")]
+        return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_64/lib");
+    }
 }
 
 fn qt_download() {
@@ -51,7 +57,13 @@ fn qt_download() {
             .args(["-m", "aqt", "install-qt", "-O", LIBDIE_BUILD_DIR]);
 
         #[cfg(target_os = "linux")]
-        cmd.args(["linux", "desktop", QT_VERSION]);
+        {
+            #[cfg(target_arch = "x86_64")]
+            cmd.args(["linux", "desktop", QT_VERSION]);
+
+            #[cfg(target_arch = "aarch64")]
+            cmd.args(["linux_arm64", "desktop", QT_VERSION, "linux_gcc_arm64"]);
+        }
         #[cfg(target_os = "macos")]
         cmd.args(["mac", "desktop", QT_VERSION, "clang_64"]);
         #[cfg(target_os = "windows")]
