@@ -65,7 +65,7 @@ fn qt_download() {
             cmd.args(["linux_arm64", "desktop", QT_VERSION, "linux_gcc_arm64"]);
         }
         #[cfg(target_os = "macos")]
-        cmd.args(["mac", "desktop", QT_VERSION, "clang_64"]);
+        cmd.args(["mac", "desktop", QT_VERSION]);
         #[cfg(target_os = "windows")]
         cmd.args(["windows", "desktop", QT_VERSION, "win64_msvc2022_64"]);
 
