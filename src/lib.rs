@@ -46,12 +46,12 @@ bitflags! {
 #[link(name = "die", kind = "static")]
 unsafe extern "C" {
     // Definitions from die.h
-    fn DIE_FreeMemoryA(str: *const i8);
-    fn DIE_ScanFileA(fname: *const i8, flags: u32, db: *const i8) -> *const i8;
-    fn DIE_ScanFileExA(fname: *const i8, flags: u32) -> *mut i8;
-    fn DIE_ScanMemoryA(mem: *const u8, len: u32, flags: u32, db: *const i8) -> *mut i8;
-    fn DIE_ScanMemoryExA(mem: *const u8, len: u32, flags: u32) -> *mut i8;
-    fn DIE_LoadDatabaseA(fname: *const i8) -> i32;
+    fn DIE_FreeMemoryA(str: *const u8);
+    fn DIE_ScanFileA(fname: *const u8, flags: u32, db: *const u8) -> *const u8;
+    fn DIE_ScanFileExA(fname: *const u8, flags: u32) -> *const u8;
+    fn DIE_ScanMemoryA(mem: *const u8, len: u32, flags: u32, db: *const u8) -> *const u8;
+    fn DIE_ScanMemoryExA(mem: *const u8, len: u32, flags: u32) -> *const u8;
+    fn DIE_LoadDatabaseA(fname: *const u8) -> i32;
 }
 
 /// Scans a file at the specified path using the provided scan flags.
@@ -89,8 +89,10 @@ pub fn scan_file(fpath: &Path, flags: ScanFlags) -> Result<String> {
     let fpath = CString::new(fpath.to_str().ok_or(Error::ConversionFailure)?)?;
 
     unsafe {
-        let res = DIE_ScanFileExA(fpath.as_ptr(), flags.bits());
-        let out = CStr::from_ptr(res).to_str()?.to_string();
+        let res = DIE_ScanFileExA(fpath.as_bytes_with_nul().as_ptr(), flags.bits());
+        let out = CStr::from_ptr(res as *const std::os::raw::c_char)
+            .to_str()?
+            .to_string();
         DIE_FreeMemoryA(res);
         Ok(out)
     }
@@ -133,9 +135,15 @@ pub fn scan_file_with_db(fpath: &Path, flags: ScanFlags, db_path: &Path) -> Resu
     let db_path = CString::new(db_path.to_str().ok_or(Error::ConversionFailure)?)?;
 
     unsafe {
-        let cstr = CStr::from_ptr(fpath.as_ptr() as *const i8);
-        let res = DIE_ScanFileA(cstr.as_ptr(), flags.bits(), db_path.as_ptr());
-        let str = CStr::from_ptr(res).to_str()?.to_string();
+        let cstr = CStr::from_ptr(fpath.as_ptr());
+        let res = DIE_ScanFileA(
+            cstr.to_bytes_with_nul().as_ptr(),
+            flags.bits(),
+            db_path.to_bytes_with_nul().as_ptr(),
+        );
+        let str = CStr::from_ptr(res as *const std::os::raw::c_char)
+            .to_str()?
+            .to_string();
         DIE_FreeMemoryA(res);
         Ok(str)
     }
@@ -178,7 +186,9 @@ pub fn scan_memory(mem: &[u8], flags: ScanFlags) -> Result<String> {
 
     unsafe {
         let res = DIE_ScanMemoryExA(ptr, sz as u32, flags.bits());
-        let str = CStr::from_ptr(res).to_str()?.to_string();
+        let str = CStr::from_ptr(res as *const std::os::raw::c_char)
+            .to_str()?
+            .to_string();
         DIE_FreeMemoryA(res);
         Ok(str)
     }
@@ -224,8 +234,15 @@ pub fn scan_memory_with_db(mem: &[u8], flags: ScanFlags, db_path: &Path) -> Resu
     }
 
     unsafe {
-        let res = DIE_ScanMemoryA(ptr, sz as u32, flags.bits(), db_path.as_ptr());
-        let str = CStr::from_ptr(res).to_str()?.to_string();
+        let res = DIE_ScanMemoryA(
+            ptr,
+            sz as u32,
+            flags.bits(),
+            db_path.as_bytes_with_nul().as_ptr(),
+        );
+        let str = CStr::from_ptr(res as *const std::os::raw::c_char)
+            .to_str()?
+            .to_string();
         DIE_FreeMemoryA(res);
         Ok(str)
     }
@@ -263,7 +280,7 @@ pub fn scan_memory_with_db(mem: &[u8], flags: ScanFlags, db_path: &Path) -> Resu
 pub fn load_database(fpath: &Path) -> Result<()> {
     let fpath = CString::new(fpath.to_str().ok_or(Error::ConversionFailure)?)?;
 
-    let res = unsafe { DIE_LoadDatabaseA(fpath.as_ptr()) };
+    let res = unsafe { DIE_LoadDatabaseA(fpath.as_bytes_with_nul().as_ptr()) };
     match res {
         0 => Ok(()),
         err => Err(Error::Ffi { error_code: err }),
