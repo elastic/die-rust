@@ -1,25 +1,28 @@
 #[allow(dead_code)]
 // build.rs
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
-use std::{
-    env, fs,
-    path::{Path, PathBuf},
-};
-
-const QT_VERSION: &'static str = "6.10.0";
-const BASE_DIR: &'static str = ".";
-const LIBDIE_BASE_DIR: &'static str = "./libdie++";
-const LIBDIE_BUILD_DIR: &'static str = "./libdie++/build";
-const LIBDIE_INSTALL_DIR: &'static str = "./libdie++/install";
-const LIB_DIE_PATH: &'static str = "./libdie++/build/_deps/dielibrary-build/src";
+use std::    env;
 
 #[cfg(target_os = "windows")]
-const WINDOWS_KITS_LIB_DIR: &'static str = r"C:\Program Files (x86)\Windows Kits\10\Lib";
+use std::{
+    fs,
+    path::{Path, PathBuf}
+};
+
+const QT_VERSION: &str = "6.10.0";
+const BASE_DIR: &str = ".";
+const LIBDIE_BASE_DIR: &str = "./libdie++";
+const LIBDIE_BUILD_DIR: &str = "./libdie++/build";
+const LIBDIE_INSTALL_DIR: &str = "./libdie++/install";
+const LIB_DIE_PATH: &str = "./libdie++/build/_deps/dielibrary-build/src";
+
+#[cfg(target_os = "windows")]
+const WINDOWS_KITS_LIB_DIR: &str = r"C:\Program Files (x86)\Windows Kits\10\Lib";
 
 #[cfg(debug_assertions)]
-const BUILD_TYPE: &'static str = "Debug";
+const BUILD_TYPE: &str = "Debug";
 #[cfg(not(debug_assertions))]
-const BUILD_TYPE: &'static str = "Release";
+const BUILD_TYPE: &str = "Release";
 
 fn get_qt_libs_path() -> String {
     #[cfg(target_os = "windows")]
@@ -76,7 +79,7 @@ fn qt_download() {
             cmd.spawn()
                 .unwrap()
                 .wait()
-                .expect(format!("failed to install Qt {QT_VERSION} using AQT").as_str())
+                .unwrap_or_else(|_| panic!("failed to install Qt {QT_VERSION} using AQT"))
                 .success()
         );
     }
@@ -141,14 +144,17 @@ fn cmake_build_die() {
     }
 }
 
+#[cfg(target_os = "windows")]
 fn has_windows_ucrt_libs(path: &Path) -> bool {
     path.join("ucrt").join("x64").exists()
 }
 
+#[cfg(target_os = "windows")]
 fn normalized_windows_sdk_version(version: &str) -> &str {
     version.trim_end_matches(['\\', '/'])
 }
 
+#[cfg(target_os = "windows")]
 fn parse_windows_sdk_version(version: &str) -> Option<Vec<u32>> {
     normalized_windows_sdk_version(version)
         .split('.')
@@ -156,6 +162,7 @@ fn parse_windows_sdk_version(version: &str) -> Option<Vec<u32>> {
         .collect()
 }
 
+#[cfg(target_os = "windows")]
 fn find_latest_windows_sdk_dir(base_dir: &Path) -> Option<PathBuf> {
     fs::read_dir(base_dir)
         .ok()?
@@ -347,7 +354,7 @@ fn install() {
 }
 
 fn is_qt_missing() -> bool {
-    std::path::Path::new(get_qt_libs_path().as_str()).exists() == false
+    !std::path::Path::new(get_qt_libs_path().as_str()).exists()
 }
 
 fn should_rebuild_libdie() -> bool {
@@ -374,7 +381,7 @@ fn should_rebuild_libdie() -> bool {
     #[cfg(target_os = "macos")]
     fpath.push("lib/libdie.a");
 
-    return fpath.exists() == false;
+    !fpath.exists()
 }
 
 fn main() {
