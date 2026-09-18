@@ -259,6 +259,7 @@ fn install() {
             LIB_DIE_PATH, _mod
         );
     }
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{}/die/lib", LIBDIE_INSTALL_DIR);
 }
 
 #[cfg(target_os = "macos")]
