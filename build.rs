@@ -44,7 +44,7 @@ fn qt_download() {
         assert!(
             std::process::Command::new("python")
                 .current_dir(BASE_DIR)
-                .args(["-m", "pip", "install", "--user", "--upgrade", "aqtinstall"])
+                .args(["-m", "pip", "install", "--upgrade", "aqtinstall"])
                 .spawn()
                 .unwrap()
                 .wait()
