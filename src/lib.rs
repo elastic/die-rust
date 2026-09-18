@@ -263,7 +263,7 @@ pub fn scan_memory_with_db(mem: &[u8], flags: ScanFlags, db_path: &Path) -> Resu
 /// # Returns
 ///
 /// * `Result<()>` - On success, returns `Ok()`.
-///                  On failure, returns an `Err` with the error details.
+///   On failure, returns an `Err` with the error details.
 ///
 /// # Examples
 ///
