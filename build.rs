@@ -1,22 +1,28 @@
 #[allow(dead_code)]
 // build.rs
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
-use std::env;
-
-const QT_VERSION: &'static str = "6.10.0";
-const BASE_DIR: &'static str = ".";
-const LIBDIE_BASE_DIR: &'static str = "./libdie++";
-const LIBDIE_BUILD_DIR: &'static str = "./libdie++/build";
-const LIBDIE_INSTALL_DIR: &'static str = "./libdie++/install";
-const LIB_DIE_PATH: &'static str = "./libdie++/build/_deps/dielibrary-build/src";
+use std::    env;
 
 #[cfg(target_os = "windows")]
-const MSVC_PATH: &'static str = r"C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22000.0";
+use std::{
+    fs,
+    path::{Path, PathBuf}
+};
+
+const QT_VERSION: &str = "6.10.0";
+const BASE_DIR: &str = ".";
+const LIBDIE_BASE_DIR: &str = "./libdie++";
+const LIBDIE_BUILD_DIR: &str = "./libdie++/build";
+const LIBDIE_INSTALL_DIR: &str = "./libdie++/install";
+const LIB_DIE_PATH: &str = "./libdie++/build/_deps/dielibrary-build/src";
+
+#[cfg(target_os = "windows")]
+const WINDOWS_KITS_LIB_DIR: &str = r"C:\Program Files (x86)\Windows Kits\10\Lib";
 
 #[cfg(debug_assertions)]
-const BUILD_TYPE: &'static str = "Debug";
+const BUILD_TYPE: &str = "Debug";
 #[cfg(not(debug_assertions))]
-const BUILD_TYPE: &'static str = "Release";
+const BUILD_TYPE: &str = "Release";
 
 fn get_qt_libs_path() -> String {
     #[cfg(target_os = "windows")]
@@ -41,7 +47,7 @@ fn qt_download() {
         assert!(
             std::process::Command::new("python")
                 .current_dir(BASE_DIR)
-                .args(["-m", "pip", "install", "--user", "--upgrade", "aqtinstall"])
+                .args(["-m", "pip", "install", "--upgrade", "aqtinstall"])
                 .spawn()
                 .unwrap()
                 .wait()
@@ -73,7 +79,7 @@ fn qt_download() {
             cmd.spawn()
                 .unwrap()
                 .wait()
-                .expect(format!("failed to install Qt {QT_VERSION} using AQT").as_str())
+                .unwrap_or_else(|_| panic!("failed to install Qt {QT_VERSION} using AQT"))
                 .success()
         );
     }
@@ -138,6 +144,74 @@ fn cmake_build_die() {
     }
 }
 
+#[cfg(target_os = "windows")]
+fn has_windows_ucrt_libs(path: &Path) -> bool {
+    path.join("ucrt").join("x64").exists()
+}
+
+#[cfg(target_os = "windows")]
+fn normalized_windows_sdk_version(version: &str) -> &str {
+    version.trim_end_matches(['\\', '/'])
+}
+
+#[cfg(target_os = "windows")]
+fn parse_windows_sdk_version(version: &str) -> Option<Vec<u32>> {
+    normalized_windows_sdk_version(version)
+        .split('.')
+        .map(|segment| segment.parse::<u32>().ok())
+        .collect()
+}
+
+#[cfg(target_os = "windows")]
+fn find_latest_windows_sdk_dir(base_dir: &Path) -> Option<PathBuf> {
+    fs::read_dir(base_dir)
+        .ok()?
+        .filter_map(|entry| {
+            let entry = entry.ok()?;
+            let path = entry.path();
+
+            if !path.is_dir() || !has_windows_ucrt_libs(&path) {
+                return None;
+            }
+
+            let version = entry.file_name();
+            let version = version.to_str()?;
+            let version = parse_windows_sdk_version(version)?;
+
+            Some((version, path))
+        })
+        .max_by(|(left, _), (right, _)| left.cmp(right))
+        .map(|(_, path)| path)
+}
+
+#[cfg(target_os = "windows")]
+fn resolve_windows_sdk_dir() -> Option<PathBuf> {
+    if let Some(path) = env::var_os("MSVC_PATH") {
+        let path = PathBuf::from(path);
+        if has_windows_ucrt_libs(&path) {
+            return Some(path);
+        }
+    }
+
+    if let Some(root) = env::var_os("WindowsSdkDir") {
+        let version = env::var("WindowsSDKLibVersion")
+            .or_else(|_| env::var("WindowsSDKVersion"))
+            .ok();
+
+        if let Some(version) = version {
+            let path = PathBuf::from(root)
+                .join("Lib")
+                .join(normalized_windows_sdk_version(&version));
+
+            if has_windows_ucrt_libs(&path) {
+                return Some(path);
+            }
+        }
+    }
+
+    find_latest_windows_sdk_dir(Path::new(WINDOWS_KITS_LIB_DIR))
+}
+
 fn setup_common() {
     // die & die++
     println!("cargo:rustc-link-lib=static=die++");
@@ -185,6 +259,7 @@ fn install() {
             LIB_DIE_PATH, _mod
         );
     }
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{}/die/lib", LIBDIE_INSTALL_DIR);
 }
 
 #[cfg(target_os = "macos")]
@@ -216,6 +291,11 @@ fn install() {
 
 #[cfg(target_os = "windows")]
 fn install() {
+    println!("cargo:rerun-if-env-changed=MSVC_PATH");
+    println!("cargo:rerun-if-env-changed=WindowsSdkDir");
+    println!("cargo:rerun-if-env-changed=WindowsSDKLibVersion");
+    println!("cargo:rerun-if-env-changed=WindowsSDKVersion");
+
     match BUILD_TYPE {
         "Release" => {
             println!("cargo:rustc-link-lib=static=Qt6Core");
@@ -226,13 +306,18 @@ fn install() {
             println!("cargo:rustc-link-lib=dylib=Qt6Network");
         }
         "Debug" => {
+            let windows_sdk_dir = resolve_windows_sdk_dir().expect(
+                "failed to locate Windows SDK ucrt path; set MSVC_PATH or install a Windows 10 SDK",
+            );
+            let ucrt_dir = windows_sdk_dir.join("ucrt").join("x64");
+
             println!("cargo:rustc-link-lib=static=Qt6Cored");
             println!("cargo:rustc-link-lib=static=Qt6Qmld");
             println!("cargo:rustc-link-lib=static=Qt6Networkd");
             println!("cargo:rustc-link-lib=dylib=Qt6Cored");
             println!("cargo:rustc-link-lib=dylib=Qt6Qmld");
             println!("cargo:rustc-link-lib=dylib=Qt6Networkd");
-            println!("cargo:rustc-link-search=native={}/ucrt/x64", MSVC_PATH);
+            println!("cargo:rustc-link-search=native={}", ucrt_dir.display());
             println!("cargo:rustc-link-lib=static=ucrtd");
         }
         _ => {
@@ -270,7 +355,7 @@ fn install() {
 }
 
 fn is_qt_missing() -> bool {
-    std::path::Path::new(get_qt_libs_path().as_str()).exists() == false
+    !std::path::Path::new(get_qt_libs_path().as_str()).exists()
 }
 
 fn should_rebuild_libdie() -> bool {
@@ -297,7 +382,7 @@ fn should_rebuild_libdie() -> bool {
     #[cfg(target_os = "macos")]
     fpath.push("lib/libdie.a");
 
-    return fpath.exists() == false;
+    !fpath.exists()
 }
 
 fn main() {
@@ -316,4 +401,47 @@ fn main() {
     install();
 
     println!("cargo:rerun-if-changed=src/lib.rs");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    fn temp_test_dir(name: &str) -> PathBuf {
+        let timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        env::temp_dir().join(format!("die-rust-build-rs-{name}-{timestamp}"))
+    }
+
+    #[test]
+    fn normalizes_windows_sdk_version() {
+        assert_eq!(
+            normalized_windows_sdk_version("10.0.26100.0\\"),
+            "10.0.26100.0"
+        );
+        assert_eq!(
+            normalized_windows_sdk_version("10.0.26100.0/"),
+            "10.0.26100.0"
+        );
+    }
+
+    #[test]
+    fn finds_latest_windows_sdk_dir() {
+        let base_dir = temp_test_dir("windows-sdk");
+        let older = base_dir.join("10.0.22000.0").join("ucrt").join("x64");
+        let newer = base_dir.join("10.0.26100.0").join("ucrt").join("x64");
+        let invalid = base_dir.join("invalid").join("ucrt").join("x64");
+
+        fs::create_dir_all(&older).unwrap();
+        fs::create_dir_all(&newer).unwrap();
+        fs::create_dir_all(&invalid).unwrap();
+
+        let latest = find_latest_windows_sdk_dir(&base_dir).unwrap();
+        assert_eq!(latest, base_dir.join("10.0.26100.0"));
+
+        fs::remove_dir_all(&base_dir).unwrap();
+    }
 }
