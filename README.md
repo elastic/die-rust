@@ -34,11 +34,13 @@ out of the box, but its binaries will not *run* until it embeds an rpath itself.
 declares `links = "die"` and exports the two directories needed for that, so a dependent's
 `build.rs` can do:
 
-```rust
-fn main() {
+```rust,no_run
+fn main(){
+    // [...]
     let qt = std::env::var("DEP_DIE_QT_LIB_PATH").unwrap();
     let die = std::env::var("DEP_DIE_INSTALL_LIB_PATH").unwrap();
 
+    // [...]
     println!("cargo:rustc-link-arg=-Wl,-rpath,{qt}");
     println!("cargo:rustc-link-arg=-Wl,-rpath,{die}");
 }
