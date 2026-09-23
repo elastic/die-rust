@@ -57,7 +57,13 @@ fn managed_qt_libs_path() -> String {
 
 fn get_qt_libs_path() -> String {
     match env::var("QT6_LIB_PATH") {
-        Ok(path) if !path.trim().is_empty() => absolute(path.trim()),
+        Ok(path) if !path.trim().is_empty() => {
+            let p = absolute(path.trim());
+            if !Path::new(&p).is_dir() {
+                panic!("QT6_LIB_PATH={p} is not an existing directory.");
+            }
+            p
+        },
         _ => managed_qt_libs_path(),
     }
 }
@@ -261,7 +267,7 @@ fn install() {
     println!("cargo:rustc-link-lib=dylib=Qt6Network");
 
     println!("cargo:rustc-link-search=native={lib_die_path}/XCapstone");
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+    for _mod in ["bzip2", "lzma", "zlib"] {
         println!("cargo:rustc-link-search=native={lib_die_path}/XArchive/3rdparty/{_mod}");
     }
 
@@ -287,7 +293,7 @@ fn install() {
     println!("cargo:rustc-link-lib=framework=QtNetwork");
 
     println!("cargo:rustc-link-search=native={lib_die_path}/XCapstone");
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+    for _mod in ["bzip2", "lzma", "zlib"] {
         println!("cargo:rustc-link-search=native={lib_die_path}/XArchive/3rdparty/{_mod}");
     }
 }
