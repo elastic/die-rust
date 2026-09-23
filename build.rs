@@ -345,7 +345,7 @@ fn install() {
     println!(
         "cargo:rustc-link-search=native={build_dir}/_deps/dielibrary-build/src/dielib/{BUILD_TYPE}"
     );
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+    for _mod in ["bzip2", "lzma", "zlib"] {
         println!(
             "cargo:rustc-link-search=native={lib_die_path}/XArchive/3rdparty/{_mod}/{BUILD_TYPE}"
         );
