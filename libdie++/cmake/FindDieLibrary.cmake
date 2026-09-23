@@ -17,14 +17,17 @@ else()
   message(FATAL "nope")
 endif()
 
-set(Qt6_PREFIX_PATH "${ROOT_DIR}/build/${QT_BUILD_VERSION}/${QT_BUILD_COMPILER}")
-set(CMAKE_PREFIX_PATH  "${Qt6_PREFIX_PATH}")
-set(Qt6_CMAKE_PREFIX_PATH "${Qt6_PREFIX_PATH}/lib/cmake")
-set(Qt6_DIR ${Qt6_CMAKE_PREFIX_PATH}/Qt6)
+if(NOT Qt6_DIR)
+  set(Qt6_PREFIX_PATH "${ROOT_DIR}/build/${QT_BUILD_VERSION}/${QT_BUILD_COMPILER}")
+  set(CMAKE_PREFIX_PATH "${Qt6_PREFIX_PATH}")
+  set(Qt6_CMAKE_PREFIX_PATH "${Qt6_PREFIX_PATH}/lib/cmake")
+  set(Qt6_DIR ${Qt6_CMAKE_PREFIX_PATH}/Qt6)
+endif()
+
 set(QT_DIR ${Qt6_DIR})
 
 list(APPEND CMAKE_MODULE_PATH
-  ${Qt6_CMAKE_PREFIX_PATH}
+  "${Qt6_DIR}/.."
   ${Qt6_DIR}
 )
 

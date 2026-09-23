@@ -57,15 +57,13 @@ fn managed_qt_libs_path() -> String {
 
 fn get_qt_libs_path() -> String {
     match env::var("QT6_LIB_PATH") {
-        Ok(path) if !path.trim().is_empty() => {
-            let p = absolute(path.trim());
-            if !Path::new(&p).is_dir() {
-                panic!("QT6_LIB_PATH={p} is not an existing directory.");
-            }
-            p
-        },
+        Ok(path) if !path.trim().is_empty() => absolute(path.trim()),
         _ => managed_qt_libs_path(),
     }
+}
+
+fn qt_cmake_config_dir() -> String {
+    format!("{}/cmake/Qt6", get_qt_libs_path().replace('\\', "/"))
 }
 
 fn qt_download() {
@@ -115,10 +113,19 @@ fn qt_download() {
 fn cmake_build_die() {
     // CMake configure
     {
+        let qt_cmake_dir = qt_cmake_config_dir();
+
+        assert!(
+            Path::new(&qt_cmake_dir).is_dir(),
+            "'{qt_cmake_dir}' does not exist: QT6_LIB_PATH must point to a Qt6 library directory \
+             containing cmake/Qt6/Qt6Config.cmake"
+        );
+
         assert!(
             std::process::Command::new("cmake")
                 .args(["-S", LIBDIE_BASE_DIR])
                 .args(["-B", LIBDIE_BUILD_DIR])
+                .arg(format!("-DQt6_DIR:PATH={qt_cmake_dir}"))
                 .spawn()
                 .unwrap()
                 .wait()
@@ -360,7 +367,7 @@ fn is_qt_missing() -> bool {
 }
 
 fn should_rebuild_libdie() -> bool {
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+    for _mod in ["bzip2", "lzma", "zlib"] {
         #[cfg(target_os = "windows")]
         let path_str = format!("{}/XArchive/3rdparty/{}/{}", LIB_DIE_PATH, _mod, BUILD_TYPE);
 
@@ -394,12 +401,11 @@ fn main() {
         qt_download();
     }
 
-    // Point cmake at Qt6, whether it was just downloaded or was already there
     let qt_lib_path = get_qt_libs_path();
-    unsafe {
-        env::set_var("QT6_LIB_PATH", qt_lib_path.as_str());
-        env::set_var("Qt6_DIR", qt_lib_path.as_str());
-    }
+    assert!(
+        Path::new(&qt_lib_path).is_dir(),
+        "'{qt_lib_path}' is not an existing directory, check the QT6_LIB_PATH environment variable"
+    );
 
     if should_rebuild_libdie() {
         cmake_build_die();
@@ -409,10 +415,14 @@ fn main() {
     install();
 
     println!("cargo:qt_lib_path={qt_lib_path}");
-    println!(
-        "cargo:install_lib_path={}/die/lib",
-        absolute(LIBDIE_INSTALL_DIR)
-    );
+
+    #[cfg(target_os = "windows")]
+    let install_lib_path = format!("{}/die", absolute(LIBDIE_INSTALL_DIR));
+
+    #[cfg(not(target_os = "windows"))]
+    let install_lib_path = format!("{}/die/lib", absolute(LIBDIE_INSTALL_DIR));
+
+    println!("cargo:install_lib_path={install_lib_path}");
 
     println!("cargo:rerun-if-changed=src/lib.rs");
 }
