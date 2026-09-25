@@ -23,6 +23,33 @@ cd die-rust
 cargo build
 ```
 
+Set `QT6_LIB_PATH` to link against an existing Qt6 installation instead of the one `aqtinstall`
+downloads under `libdie++/build`. A relative value is resolved against the crate root.
+
+### Using `die` as a dependency
+
+Qt6 and `libdie` are not on the default loader path, and cargo does not propagate a dependency's
+`rustc-link-arg` to the crates that depend on it. A crate depending on `die` therefore links fine
+out of the box, but its binaries will not *run* until it embeds an rpath itself. This crate
+declares `links = "die"` and exports the two directories needed for that, so a dependent's
+`build.rs` can do:
+
+```rust,ignore
+fn main(){
+    // [...]
+    let qt = std::env::var("DEP_DIE_QT_LIB_PATH").unwrap();
+    let die = std::env::var("DEP_DIE_INSTALL_LIB_PATH").unwrap();
+
+    // [...]
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{qt}");
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{die}");
+}
+```
+
+Setting `LD_LIBRARY_PATH` (`DYLD_LIBRARY_PATH` on macOS) to those directories at run time works
+just as well. Windows has no rpath: add those two directories (`DEP_DIE_QT_LIB_PATH` points to
+the Qt6 `lib` directory, so use its sibling `bin` directory, which holds the DLLs) to `PATH`, or
+copy the DLLs next to the executable.
 
 
 ## Examples

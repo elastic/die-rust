@@ -1,20 +1,18 @@
 #[allow(dead_code)]
 // build.rs
 // https://doc.rust-lang.org/cargo/reference/build-scripts.html
-use std::    env;
+use std::env;
+use std::path::{Path, PathBuf};
 
 #[cfg(target_os = "windows")]
-use std::{
-    fs,
-    path::{Path, PathBuf}
-};
+use std::fs;
 
 const QT_VERSION: &str = "6.10.0";
 const BASE_DIR: &str = ".";
-const LIBDIE_BASE_DIR: &str = "./libdie++";
-const LIBDIE_BUILD_DIR: &str = "./libdie++/build";
-const LIBDIE_INSTALL_DIR: &str = "./libdie++/install";
-const LIB_DIE_PATH: &str = "./libdie++/build/_deps/dielibrary-build/src";
+const LIBDIE_BASE_DIR: &str = "libdie++";
+const LIBDIE_BUILD_DIR: &str = "libdie++/build";
+const LIBDIE_INSTALL_DIR: &str = "libdie++/install";
+const LIB_DIE_PATH: &str = "libdie++/build/_deps/dielibrary-build/src";
 
 #[cfg(target_os = "windows")]
 const WINDOWS_KITS_LIB_DIR: &str = r"C:\Program Files (x86)\Windows Kits\10\Lib";
@@ -24,21 +22,48 @@ const BUILD_TYPE: &str = "Debug";
 #[cfg(not(debug_assertions))]
 const BUILD_TYPE: &str = "Release";
 
-fn get_qt_libs_path() -> String {
+fn manifest_dir() -> PathBuf {
+    PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR is set by cargo"))
+}
+
+/// Resolve `path` against the crate root, leaving it alone if it is already absolute
+fn absolute(path: impl AsRef<Path>) -> String {
+    let path = path.as_ref();
+
+    if path.is_absolute() {
+        path.display().to_string()
+    } else {
+        manifest_dir().join(path).display().to_string()
+    }
+}
+
+/// Absolute path of the Qt6 libraries downloaded and managed by [`qt_download`]
+fn managed_qt_libs_path() -> String {
     #[cfg(target_os = "windows")]
-    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/msvc2022_64/lib");
+    return absolute(format!("{LIBDIE_BUILD_DIR}/{QT_VERSION}/msvc2022_64/lib"));
 
     #[cfg(target_os = "macos")]
-    return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/macos/lib");
+    return absolute(format!("{LIBDIE_BUILD_DIR}/{QT_VERSION}/macos/lib"));
 
     #[cfg(target_os = "linux")]
     {
         #[cfg(target_arch = "aarch64")]
-        return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_arm64/lib");
+        return absolute(format!("{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_arm64/lib"));
 
         #[cfg(target_arch = "x86_64")]
-        return format!("./{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_64/lib");
+        return absolute(format!("{LIBDIE_BUILD_DIR}/{QT_VERSION}/gcc_64/lib"));
     }
+}
+
+fn get_qt_libs_path() -> String {
+    match env::var("QT6_LIB_PATH") {
+        Ok(path) if !path.trim().is_empty() => absolute(path.trim()),
+        _ => managed_qt_libs_path(),
+    }
+}
+
+fn qt_cmake_config_dir() -> String {
+    format!("{}/cmake/Qt6", get_qt_libs_path().replace('\\', "/"))
 }
 
 fn qt_download() {
@@ -83,26 +108,24 @@ fn qt_download() {
                 .success()
         );
     }
-
-    // Add to env var
-    {
-        let fpath = get_qt_libs_path();
-
-        println!("cargo:rustc-env=QT6_LIB_PATH=\"{fpath}\"");
-        unsafe {
-            env::set_var("QT6_LIB_PATH", fpath.as_str());
-            env::set_var("Qt6_DIR", fpath.as_str());
-        }
-    }
 }
 
 fn cmake_build_die() {
     // CMake configure
     {
+        let qt_cmake_dir = qt_cmake_config_dir();
+
+        assert!(
+            Path::new(&qt_cmake_dir).is_dir(),
+            "'{qt_cmake_dir}' does not exist: QT6_LIB_PATH must point to a Qt6 library directory \
+             containing cmake/Qt6/Qt6Config.cmake"
+        );
+
         assert!(
             std::process::Command::new("cmake")
                 .args(["-S", LIBDIE_BASE_DIR])
                 .args(["-B", LIBDIE_BUILD_DIR])
+                .arg(format!("-DQt6_DIR:PATH={qt_cmake_dir}"))
                 .spawn()
                 .unwrap()
                 .wait()
@@ -225,9 +248,7 @@ fn setup_common() {
 
     // qt
     println!("cargo:rerun-if-env-changed=QT6_LIB_PATH");
-    if let Some(qt_lib_path) = option_env!("QT6_LIB_PATH") {
-        println!("cargo:rustc-link-search=native={}", qt_lib_path);
-    }
+    println!("cargo:rustc-link-search=native={}", get_qt_libs_path());
 
     if BUILD_TYPE == "Release" {
         println!("cargo:rustc-link-lib=static=Qt6Core");
@@ -241,51 +262,46 @@ fn setup_common() {
 
 #[cfg(target_os = "linux")]
 fn install() {
-    println!("cargo:rustc-link-search=native={}/die", LIBDIE_INSTALL_DIR);
-    println!(
-        "cargo:rustc-link-search=native={}/die/lib",
-        LIBDIE_INSTALL_DIR
-    );
+    let install_dir = absolute(LIBDIE_INSTALL_DIR);
+    let lib_die_path = absolute(LIB_DIE_PATH);
+    let qt_lib_path = get_qt_libs_path();
+
+    println!("cargo:rustc-link-search=native={install_dir}/die");
+    println!("cargo:rustc-link-search=native={install_dir}/die/lib");
     println!("cargo:rustc-link-lib=dylib=stdc++");
     println!("cargo:rustc-link-lib=dylib=Qt6Core");
     println!("cargo:rustc-link-lib=dylib=Qt6Qml");
     println!("cargo:rustc-link-lib=dylib=Qt6Network");
-    println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu");
 
-    println!("cargo:rustc-link-search=native={}/XCapstone", LIB_DIE_PATH);
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
-        println!(
-            "cargo:rustc-link-search=native={}/XArchive/3rdparty/{}",
-            LIB_DIE_PATH, _mod
-        );
+    println!("cargo:rustc-link-search=native={lib_die_path}/XCapstone");
+    for _mod in ["bzip2", "lzma", "zlib"] {
+        println!("cargo:rustc-link-search=native={lib_die_path}/XArchive/3rdparty/{_mod}");
     }
-    println!("cargo:rustc-link-arg=-Wl,-rpath,{}/die/lib", LIBDIE_INSTALL_DIR);
+
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{install_dir}/die/lib");
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{qt_lib_path}");
 }
 
 #[cfg(target_os = "macos")]
 fn install() {
-    println!("cargo:rustc-link-search=native={}/die", LIBDIE_INSTALL_DIR);
-    println!(
-        "cargo:rustc-link-search=native={}/die/lib",
-        LIBDIE_INSTALL_DIR
-    );
+    let install_dir = absolute(LIBDIE_INSTALL_DIR);
+    let lib_die_path = absolute(LIB_DIE_PATH);
+    let qt_lib_path = get_qt_libs_path();
+
+    println!("cargo:rustc-link-search=native={install_dir}/die");
+    println!("cargo:rustc-link-search=native={install_dir}/die/lib");
     println!("cargo:rustc-link-lib=dylib=c++");
 
-    if let Some(qt_lib_path) = option_env!("QT6_LIB_PATH") {
-        println!("cargo:rustc-link-search=framework={}/", qt_lib_path);
-        println!("cargo:rustc-link-arg=-Wl,-rpath,{}", qt_lib_path);
-    }
+    println!("cargo:rustc-link-search=framework={qt_lib_path}/");
+    println!("cargo:rustc-link-arg=-Wl,-rpath,{qt_lib_path}");
 
     println!("cargo:rustc-link-lib=framework=QtCore");
     println!("cargo:rustc-link-lib=framework=QtQml");
     println!("cargo:rustc-link-lib=framework=QtNetwork");
 
-    println!("cargo:rustc-link-search=native={}/XCapstone", LIB_DIE_PATH);
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
-        println!(
-            "cargo:rustc-link-search=native={}/XArchive/3rdparty/{}",
-            LIB_DIE_PATH, _mod
-        );
+    println!("cargo:rustc-link-search=native={lib_die_path}/XCapstone");
+    for _mod in ["bzip2", "lzma", "zlib"] {
+        println!("cargo:rustc-link-search=native={lib_die_path}/XArchive/3rdparty/{_mod}");
     }
 }
 
@@ -325,41 +341,33 @@ fn install() {
         }
     };
 
-    println!("cargo:rustc-link-search=native={}/die", LIBDIE_INSTALL_DIR);
+    let install_dir = absolute(LIBDIE_INSTALL_DIR);
+    let build_dir = absolute(LIBDIE_BUILD_DIR);
+    let lib_die_path = absolute(LIB_DIE_PATH);
 
-    println!(
-        "cargo:rustc-link-search=native={}/die/dielib",
-        LIBDIE_INSTALL_DIR
-    );
+    println!("cargo:rustc-link-search=native={install_dir}/die");
+    println!("cargo:rustc-link-search=native={install_dir}/die/dielib");
 
+    println!("cargo:rustc-link-search=native={build_dir}/{BUILD_TYPE}");
     println!(
-        "cargo:rustc-link-search=native={}/{}",
-        LIBDIE_BUILD_DIR, BUILD_TYPE
+        "cargo:rustc-link-search=native={build_dir}/_deps/dielibrary-build/src/dielib/{BUILD_TYPE}"
     );
-    println!(
-        "cargo:rustc-link-search=native={}/_deps/dielibrary-build/src/dielib/{}",
-        LIBDIE_BUILD_DIR, BUILD_TYPE
-    );
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+    for _mod in ["bzip2", "lzma", "zlib"] {
         println!(
-            "cargo:rustc-link-search=native={}/XArchive/3rdparty/{}/{}",
-            LIB_DIE_PATH, _mod, BUILD_TYPE
+            "cargo:rustc-link-search=native={lib_die_path}/XArchive/3rdparty/{_mod}/{BUILD_TYPE}"
         );
     }
-    println!(
-        "cargo:rustc-link-search=native={}/XCapstone/{}",
-        LIB_DIE_PATH, BUILD_TYPE
-    );
+    println!("cargo:rustc-link-search=native={lib_die_path}/XCapstone/{BUILD_TYPE}");
     println!("cargo:rustc-link-lib=dylib=Crypt32");
     println!("cargo:rustc-link-lib=dylib=Wintrust");
 }
 
 fn is_qt_missing() -> bool {
-    !std::path::Path::new(get_qt_libs_path().as_str()).exists()
+    !Path::new(get_qt_libs_path().as_str()).exists()
 }
 
 fn should_rebuild_libdie() -> bool {
-    for _mod in ["bzip2", "lzma", "zlib"].iter() {
+    for _mod in ["bzip2", "lzma", "zlib"] {
         #[cfg(target_os = "windows")]
         let path_str = format!("{}/XArchive/3rdparty/{}/{}", LIB_DIE_PATH, _mod, BUILD_TYPE);
 
@@ -393,12 +401,28 @@ fn main() {
         qt_download();
     }
 
+    let qt_lib_path = get_qt_libs_path();
+    assert!(
+        Path::new(&qt_lib_path).is_dir(),
+        "'{qt_lib_path}' is not an existing directory, check the QT6_LIB_PATH environment variable"
+    );
+
     if should_rebuild_libdie() {
         cmake_build_die();
     }
 
     setup_common();
     install();
+
+    println!("cargo:qt_lib_path={qt_lib_path}");
+
+    #[cfg(target_os = "windows")]
+    let install_lib_path = format!("{}/die", absolute(LIBDIE_INSTALL_DIR));
+
+    #[cfg(not(target_os = "windows"))]
+    let install_lib_path = format!("{}/die/lib", absolute(LIBDIE_INSTALL_DIR));
+
+    println!("cargo:install_lib_path={install_lib_path}");
 
     println!("cargo:rerun-if-changed=src/lib.rs");
 }
